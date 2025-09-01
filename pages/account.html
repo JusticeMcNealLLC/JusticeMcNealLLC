@@ -1,218 +1,84 @@
 <!doctype html>
-<html>
+<html lang="en" data-page="account">
 <head>
   <meta charset="utf-8" />
   <title>LLC Portal – Account</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- UMD build exposes window.supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    :root { --card:#f7f7f9; --muted:#666; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 24px; }
-    .wrap { max-width: 740px; margin: 0 auto; }
-    header { display:flex; align-items:center; justify-content:space-between; margin-bottom: 16px; }
-    header h1 { font-size: 20px; margin: 0; }
-    header .muted { color: var(--muted); font-size: 14px; }
-    .card { background: var(--card); border-radius: 12px; padding: 16px; margin: 12px 0; }
-    .row { display:flex; gap: 12px; flex-wrap: wrap; }
-    .col { flex:1 1 220px; }
-    .balance { font-size: 28px; font-weight: 700; }
-    button { padding: 10px 14px; border: 0; border-radius: 10px; cursor: pointer; }
-    .primary { background:#111; color:#fff; }
-    .secondary { background:#e9e9ef; }
-    pre { background:#111; color:#eee; padding:10px; border-radius:8px; overflow:auto; }
-    .tiny { font-size: 12px; color: var(--muted); }
-    a { color:#111; }
-  </style>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: '#111',
+            muted: '#666',
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body>
-<div class="wrap">
-  <header>
-    <div>
-      <h1>Member Account</h1>
-      <div id="whoami" class="muted">loading…</div>
-    </div>
-    <div>
-      <button id="signOut" class="secondary">Sign out</button>
-    </div>
-  </header>
 
-  <div id="flash" class="tiny"></div>
+<!-- Require auth for this page; set data-member-id after login or server-side -->
+<body class="bg-gray-50 font-sans" data-require-auth data-member-id="00000000-0000-0000-0000-000000000000">
+  <div class="max-w-3xl mx-auto p-6">
+    <header class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Member Account</h1>
+        <div id="whoami" class="text-sm text-gray-600">Loading…</div>
+      </div>
+      <button id="signOut" class="inline-flex items-center justify-center px-3 py-2 rounded-md bg-gray-200 text-sm hover:bg-gray-300 transition">
+        Sign out
+      </button>
+    </header>
 
-  <div class="row">
-    <div class="card col">
-      <div class="muted">Capital Balance</div>
-      <div class="balance">$<span id="balance">0.00</span></div>
-      <div class="tiny">Updates after Stripe marks your invoice as paid.</div>
-      <div style="margin-top:10px;">
-        <button id="refresh" class="secondary">Refresh</button>
-      </div>
-    </div>
+    <div id="flash" class="text-xs text-gray-500 mb-3"></div>
 
-    <div class="card col">
-      <div class="muted">Contributions</div>
-      <div style="margin-top:8px; display:flex; gap:8px; flex-wrap: wrap;">
-        <button id="startBtn" class="primary">Start / Increase</button>
-        <button id="manageBtn" class="secondary">Manage in Portal</button>
+    <section class="grid gap-4 md:grid-cols-2">
+      <!-- Balance card -->
+      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+        <div class="text-sm text-gray-500">Capital Balance</div>
+        <div class="mt-1 text-3xl font-bold tabular-nums">
+          <span id="balance">$0.00</span>
+        </div>
+        <p class="mt-1 text-xs text-gray-400">Updates after Stripe marks your invoice as paid.</p>
+        <button id="refresh" class="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-sm rounded-md py-2 transition">
+          Refresh
+        </button>
       </div>
-      <div class="tiny" style="margin-top:8px;">
-        “Start / Increase” opens Stripe Checkout.<br/>
-        “Manage” opens the Stripe Customer Portal.
+
+      <!-- Contributions card -->
+      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+        <div class="text-sm text-gray-500">Contributions</div>
+        <div class="flex gap-2 mt-3">
+          <button id="startBtn" class="flex-1 bg-black text-white rounded-md py-2 text-sm hover:bg-gray-800 transition">
+            Start / Increase
+          </button>
+          <button id="manageBtn" class="flex-1 bg-gray-100 rounded-md py-2 text-sm hover:bg-gray-200 transition">
+            Manage in Portal
+          </button>
+        </div>
+        <p class="text-xs text-gray-400 mt-2 leading-relaxed">
+          “Start / Increase” opens Stripe Checkout.<br>
+          “Manage” opens the Stripe Customer Portal.
+        </p>
       </div>
-    </div>
+    </section>
+
+    <!-- Debug card -->
+    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5 mt-6">
+      <div class="text-sm text-gray-500 mb-2">Recent (debug)</div>
+      <pre id="debug" class="text-xs bg-gray-900 text-gray-100 p-3 rounded-md overflow-auto">waiting…</pre>
+    </section>
+
+    <p class="text-xs text-gray-400 mt-4">
+      Having trouble? Make sure you’re logged in on this device and contact an admin if you can’t access your account.
+    </p>
   </div>
 
-  <div class="card">
-    <div class="muted">Recent (debug)</div>
-    <pre id="debug">waiting…</pre>
-  </div>
-
-  <div class="tiny">
-    Having trouble? Make sure you’re logged in on this device and contact an admin if you can’t access your account.
-  </div>
-</div>
-
-<script>
-/** ====== CONFIG ====== **/
-const SUPABASE_URL = 'https://onxkbrjtkparnldcjuqf.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ueGticmp0a3Bhcm5sZGNqdXFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY2ODE2ODIsImV4cCI6MjA3MjI1NzY4Mn0.I5JHRN-8rk7oOuWMP5eOWB5PPCz69lgbS-2yvicT3xg';
-
-// Your deployed Supabase Edge Function endpoints:
-const START_FN  = 'https://onxkbrjtkparnldcjuqf.supabase.co/functions/v1/start-contribution';
-const MANAGE_FN = 'https://onxkbrjtkparnldcjuqf.supabase.co/functions/v1/manage-contribution';
-
-/** ====== INIT ====== **/
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
-  auth: { persistSession: true, autoRefreshToken: true }
-});
-
-const $ = (id) => document.getElementById(id);
-
-function fmtCents(c) { return (Number(c || 0) / 100).toFixed(2); }
-
-function getQueryFlag(name) {
-  const url = new URL(location.href);
-  return url.searchParams.get(name);
-}
-
-async function requireUser() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    $('whoami').textContent = 'Not signed in';
-    // if you have a login page, uncomment the next line:
-    // location.href = 'login.html';
-    throw new Error('No session');
-  }
-  return user;
-}
-
-async function loadMember() {
-  const { data, error } = await supabase.from('members').select('id, full_name, email').single();
-  if (error) throw error;
-  return data;
-}
-
-async function loadBalance(memberId) {
-  const { data, error } = await supabase
-    .from('vw_capital_balances')
-    .select('capital_balance_cents')
-    .eq('member_id', memberId)
-    .single();
-  if (error && error.code !== 'PGRST116') throw error; // no row found = 0 balance
-  return data?.capital_balance_cents ?? 0;
-}
-
-async function getAuthHeader() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) throw new Error('No access token');
-  return { 'Authorization': `Bearer ${session.access_token}` };
-}
-
-async function refreshAll() {
-  try {
-    const user = await requireUser();
-    $('whoami').textContent = user.email;
-
-    const member = await loadMember();
-    $('whoami').textContent = (member.full_name || member.email);
-
-    const cents = await loadBalance(member.id);
-    $('balance').textContent = fmtCents(cents);
-
-    const ledger = await supabase.from('capital_ledger').select('*').order('created_at', { ascending: false }).limit(5);
-    $('debug').textContent = JSON.stringify({
-      user: { id: user.id, email: user.email },
-      member,
-      balance_cents: cents,
-      last_ledger_rows: ledger.data || []
-    }, null, 2);
-
-    // ===== Buttons (now send JWT in Authorization header) =====
-    $('startBtn').onclick = async () => {
-      const q = prompt('How many $100 units per month? (e.g., 4 = $400/mo)', '4');
-      if (!q) return;
-      const quantity = Number(q);
-      if (!Number.isFinite(quantity) || quantity < 1) {
-        alert('Please enter a whole number ≥ 1');
-        return;
-      }
-      let authHeader;
-      try { authHeader = await getAuthHeader(); }
-      catch { alert('Please sign in again.'); return; }
-
-      const res = await fetch(START_FN, {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json', ...authHeader },
-        body: JSON.stringify({ memberId: member.id, quantity })
-      });
-      if (!res.ok) {
-        const txt = await res.text();
-        alert('Could not start contribution: ' + txt);
-        return;
-      }
-      const { url } = await res.json();
-      location.href = url;
-    };
-
-    $('manageBtn').onclick = async () => {
-      let authHeader;
-      try { authHeader = await getAuthHeader(); }
-      catch { alert('Please sign in again.'); return; }
-
-      const res = await fetch(MANAGE_FN, {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json', ...authHeader },
-        body: JSON.stringify({ memberId: member.id })
-      });
-      if (!res.ok) {
-        const txt = await res.text();
-        alert('Could not open portal: ' + txt);
-        return;
-      }
-      const { url } = await res.json();
-      location.href = url;
-    };
-
-  } catch (e) {
-    console.error(e);
-    $('debug').textContent = 'Error: ' + (e?.message || e);
-  }
-}
-
-/** Flash success/cancel messages from Stripe redirect */
-(function flashFromQuery() {
-  const ok = getQueryFlag('success');
-  const cancel = getQueryFlag('cancel');
-  if (ok) $('flash').textContent = 'Payment success recorded. Balance will update after the invoice is marked paid.';
-  if (cancel) $('flash').textContent = 'Checkout cancelled.';
-})();
-
-/** Wire basic controls */
-$('refresh').onclick = refreshAll;
-$('signOut').onclick = async () => { await supabase.auth.signOut(); location.reload(); };
-
-/** Load on start */
-refreshAll();
-</script>
+  <!-- Autoloads /js/pages/account.js via bootstrap -->
+  <script type="module" src="/js/shared/bootstrap.js?v=2025-09-01"></script>
 </body>
 </html>

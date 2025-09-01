@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en" data-page="dashboard">
+<head>
+  <meta charset="utf-8" />
+  <title>LLC Portal – Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<!-- Require auth; replace member-id dynamically (server or after login) -->
+<body class="bg-gray-50 font-sans" data-require-auth data-member-id="00000000-0000-0000-0000-000000000000">
+  <main class="max-w-4xl mx-auto p-6 space-y-6">
+    <!-- Header -->
+    <header class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold tracking-tight">Member Dashboard</h1>
+      <div class="text-sm text-gray-600">
+        Welcome, <span id="memberName">—</span>
+      </div>
+    </header>
+
+    <!-- Balance Card -->
+    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+      <h2 class="text-sm text-gray-500">Capital Balance</h2>
+      <div class="mt-1 text-3xl font-bold tabular-nums" id="balance">$0.00</div>
+    </section>
+
+    <!-- Add Credit Form -->
+    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+      <h2 class="text-lg font-semibold mb-3">Add Credit</h2>
+      <form id="creditForm" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <input
+          name="amount"
+          type="number"
+          step="0.01"
+          min="0"
+          placeholder="Amount (USD)"
+          required
+          class="border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+        />
+        <input
+          name="note"
+          type="text"
+          placeholder="Note (optional)"
+          class="border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+        />
+        <button
+          class="bg-black text-white rounded-md px-3 py-2 text-sm hover:bg-gray-800 transition"
+        >
+          Add
+        </button>
+      </form>
+    </section>
+
+    <!-- Ledger Table -->
+    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+      <h2 class="text-lg font-semibold mb-3">Ledger</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="text-left px-2 py-1 font-medium">Date</th>
+              <th class="text-left px-2 py-1 font-medium">Amount</th>
+              <th class="text-left px-2 py-1 font-medium">Note</th>
+            </tr>
+          </thead>
+          <tbody id="ledgerBody">
+            <!-- Filled by dashboard.js -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Autoloads /js/pages/dashboard.js -->
+  <script type="module" src="/js/shared/bootstrap.js?v=2025-09-01"></script>
+</body>
+</html>

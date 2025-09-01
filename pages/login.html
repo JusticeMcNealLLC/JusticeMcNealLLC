@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" data-page="login">
+<head>
+  <meta charset="utf-8" />
+  <title>LLC Portal – Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brand: '#111', muted: '#666' }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-gray-50 font-sans min-h-screen flex items-center justify-center">
+  <main class="w-full max-w-sm p-6 bg-white rounded-2xl shadow-sm ring-1 ring-black/5">
+    <h1 class="text-2xl font-bold tracking-tight mb-6">Member Login</h1>
+
+    <form id="loginForm" class="space-y-4">
+      <input
+        type="email"
+        id="email"
+        placeholder="Email"
+        required
+        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+      />
+      <input
+        type="password"
+        id="password"
+        placeholder="Password"
+        required
+        class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+      />
+      <button
+        type="submit"
+        class="w-full inline-flex items-center justify-center rounded-md bg-black text-white px-3 py-2 text-sm hover:bg-gray-800 transition"
+      >
+        Sign In
+      </button>
+    </form>
+
+    <div id="msg" class="mt-4 text-sm text-gray-500"></div>
+  </main>
+
+  <!-- Autoloads /js/pages/login.js -->
+  <script type="module" src="/js/shared/bootstrap.js?v=2025-09-01"></script>
+</body>
+</html>

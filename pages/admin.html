@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en" data-page="admin">
+<head>
+  <meta charset="utf-8" />
+  <title>LLC Portal – Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brand: '#111', muted: '#666' }
+        }
+      }
+    }
+  </script>
+</head>
+
+<!-- Require auth; only admins should access this page -->
+<body class="bg-gray-50 font-sans" data-require-auth>
+  <main class="max-w-lg mx-auto p-6">
+    <header class="mb-6">
+      <h1 class="text-2xl font-bold tracking-tight">Admin – Invite Member</h1>
+      <div id="whoami" class="text-sm text-gray-600">Loading…</div>
+    </header>
+
+    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+      <label class="block text-sm text-gray-600">Member email to invite</label>
+      <input
+        id="inviteEmail"
+        type="email"
+        placeholder="user@example.com"
+        class="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+        required
+      />
+      <button
+        id="inviteBtn"
+        class="mt-4 w-full inline-flex items-center justify-center rounded-md bg-black text-white px-3 py-2 text-sm hover:bg-gray-800 transition"
+      >
+        Send invite
+      </button>
+      <div id="msg" class="mt-3 text-sm text-gray-500"></div>
+
+      <div class="mt-4">
+        <a href="/account.html" class="text-sm underline hover:no-underline">← Back to Account</a>
+      </div>
+    </section>
+
+    <p class="text-xs text-gray-400 mt-4">
+      You must be signed in with an admin account to use this tool.
+    </p>
+  </main>
+
+  <!-- Autoloads /js/pages/admin.js via bootstrap -->
+  <script type="module" src="/js/shared/bootstrap.js?v=2025-09-01"></script>
+</body>
+</html>
