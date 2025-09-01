@@ -99,6 +99,8 @@ async function requireUser() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     $('whoami').textContent = 'Not signed in';
+    // if you have a login page, uncomment the next line:
+    // location.href = 'login.html';
     throw new Error('No session');
   }
   return user;
@@ -120,6 +122,12 @@ async function loadBalance(memberId) {
   return data?.capital_balance_cents ?? 0;
 }
 
+async function getAuthHeader() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error('No access token');
+  return { 'Authorization': `Bearer ${session.access_token}` };
+}
+
 async function refreshAll() {
   try {
     const user = await requireUser();
@@ -139,6 +147,7 @@ async function refreshAll() {
       last_ledger_rows: ledger.data || []
     }, null, 2);
 
+    // ===== Buttons (now send JWT in Authorization header) =====
     $('startBtn').onclick = async () => {
       const q = prompt('How many $100 units per month? (e.g., 4 = $400/mo)', '4');
       if (!q) return;
@@ -147,9 +156,13 @@ async function refreshAll() {
         alert('Please enter a whole number ≥ 1');
         return;
       }
+      let authHeader;
+      try { authHeader = await getAuthHeader(); }
+      catch { alert('Please sign in again.'); return; }
+
       const res = await fetch(START_FN, {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        headers: { 'Content-Type':'application/json', ...authHeader },
         body: JSON.stringify({ memberId: member.id, quantity })
       });
       if (!res.ok) {
@@ -162,9 +175,13 @@ async function refreshAll() {
     };
 
     $('manageBtn').onclick = async () => {
+      let authHeader;
+      try { authHeader = await getAuthHeader(); }
+      catch { alert('Please sign in again.'); return; }
+
       const res = await fetch(MANAGE_FN, {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        headers: { 'Content-Type':'application/json', ...authHeader },
         body: JSON.stringify({ memberId: member.id })
       });
       if (!res.ok) {
