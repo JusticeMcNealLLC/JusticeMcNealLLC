@@ -9,14 +9,14 @@ import { supabase } from '../shared/supabaseClient.js';
 
     if (data?.session?.user) {
       // Already logged in → go to account
-      window.location.href = '/account.html';
+      window.location.href = './pages/account.html';
     } else {
       // Not logged in → go to login
-      window.location.href = '/login.html';
+      window.location.href = './pages/login.html';
     }
   } catch (err) {
     console.error(err);
     // Fallback to login if something fails
-    window.location.href = '/login.html';
+    window.location.href = './pages/login.html';
   }
 })();
