@@ -6,6 +6,13 @@ import { signOut } from '../shared/auth.js';
 import { formatCents, parseDollarsToCents, formatDate } from '../shared/format.js';
 
 let memberId = null;
+
+// ---- Configure your Edge Function endpoints here ----
+const FUNCTIONS = {
+  startContribution: 'https://onxkbrjtkparnldcjuqf.supabase.co/functions/v1/start-contribution',
+  customerPortal:    'https://onxkbrjtkparnldcjuqf.supabase.co/functions/v1/customer-portal', // <-- adjust if your portal fn has a different name
+};
+
 const dbg = () => $('#debug');
 const log = (msg, obj) => {
   const box = dbg();
@@ -14,6 +21,32 @@ const log = (msg, obj) => {
   box.textContent = (box.textContent || '') + (box.textContent ? '\n' : '') + line;
 };
 
+function showQueryToasts() {
+  const qp = new URLSearchParams(window.location.search);
+  const checkout = qp.get('checkout');
+  if (checkout === 'success') toast('Payment successful ✅', { kind: 'success', ms: 2000 });
+  if (checkout === 'cancel')  toast('Checkout canceled', { kind: 'warning', ms: 2000 });
+}
+
+// Helper to call an Edge Function with the user’s JWT
+async function callFunction(url, payload = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error('Not signed in');
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(text || `HTTP ${res.status}`);
+  }
+  return res.json(); // Expecting { url } from your functions
+}
+
 async function getCurrentUser() {
   const { data, error } = await supabase.auth.getUser();
   if (error) throw error;
@@ -21,25 +54,29 @@ async function getCurrentUser() {
 }
 
 async function createMemberForCurrentUser(user) {
-  // Adjust fields to match your members table schema
   const full_name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Member';
   const payload = { auth_user_id: user.id, full_name };
   log('Attempting to create members row:', payload);
 
-  const { data, error } = await supabase.from('members').insert([payload]).select('id, full_name').maybeSingle();
+  const { data, error } = await supabase
+    .from('members')
+    .insert([payload])
+    .select('id, full_name')
+    .maybeSingle();
+
   if (error) throw error;
   return data;
 }
 
 async function resolveMemberId() {
-  // 1) Prefer explicit data-member-id if provided
+  // 1) If server provided a member id on <body data-member-id="..."> use it (unless placeholder)
   const htmlId = (document.body.dataset.memberId || '').trim();
   if (htmlId && htmlId !== '00000000-0000-0000-0000-000000000000') {
     log('Using memberId from data-member-id:', htmlId);
     return htmlId;
   }
 
-  // 2) Otherwise, look up via members.auth_user_id
+  // 2) Otherwise map auth user -> members.id
   const user = await getCurrentUser();
   if (!user) {
     log('No auth user — redirecting to login.html');
@@ -50,7 +87,7 @@ async function resolveMemberId() {
   if (who) who.textContent = user.email || 'Signed in';
   log('Signed in as:', { id: user.id, email: user.email });
 
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from('members')
     .select('id, full_name')
     .eq('auth_user_id', user.id)
@@ -63,7 +100,7 @@ async function resolveMemberId() {
 
   if (!data?.id) {
     log('No members row found for this user.');
-    // Try to auto-create the members row once
+    // Try to auto-create once; will fail if RLS disallows insert
     try {
       const created = await createMemberForCurrentUser(user);
       if (created?.id) {
@@ -86,11 +123,13 @@ async function resolveMemberId() {
 }
 
 async function fetchBalance(mid) {
+  // Try the view first
   const { data, error } = await supabase
     .from('vw_capital_balances')
     .select('capital_balance_cents, full_name')
     .eq('member_id', mid)
     .maybeSingle();
+
   if (error) throw error;
   return data || { capital_balance_cents: 0, full_name: ($('#memberName')?.textContent || 'Member') };
 }
@@ -123,7 +162,6 @@ async function refreshLedger() {
   log('Refreshing ledger for memberId:', memberId);
 
   try {
-    // Try robust selection set (handles missing columns gracefully)
     const { data, error } = await supabase
       .from('capital_ledger')
       .select('created_at,amount_cents,note')
@@ -156,6 +194,7 @@ async function refreshLedger() {
 }
 
 function wireEvents() {
+  // Refresh
   const refreshBtn = $('#refresh');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', async () => {
@@ -165,6 +204,7 @@ function wireEvents() {
     });
   }
 
+  // Sign out
   const signOutBtn = $('#signOut');
   if (signOutBtn) {
     signOutBtn.addEventListener('click', async () => {
@@ -177,7 +217,41 @@ function wireEvents() {
     });
   }
 
-  // Credit form
+  // Start / Increase (Stripe Checkout via start-contribution)
+  const startBtn = $('#startBtn');
+  if (startBtn) {
+    startBtn.addEventListener('click', async () => {
+      try {
+        if (!memberId) throw new Error('Missing memberId');
+        // quantity is “units” for your price; adjust if you want a prompt
+        const { url } = await callFunction(FUNCTIONS.startContribution, { memberId, quantity: 1 });
+        if (!url) throw new Error('No checkout URL returned');
+        window.location.href = url;
+      } catch (e) {
+        console.error(e);
+        toast('Could not open Stripe Checkout', { kind: 'error' });
+      }
+    });
+  }
+
+  // Manage in Portal (Stripe Customer Portal)
+  const manageBtn = $('#manageBtn');
+  if (manageBtn) {
+    manageBtn.addEventListener('click', async () => {
+      try {
+        if (!memberId) throw new Error('Missing memberId');
+        // Your customer-portal function should return { url }
+        const { url } = await callFunction(FUNCTIONS.customerPortal, { memberId });
+        if (!url) throw new Error('No portal URL returned');
+        window.location.href = url;
+      } catch (e) {
+        console.error(e);
+        toast('Could not open Customer Portal', { kind: 'error' });
+      }
+    });
+  }
+
+  // Credit form (manual insert)
   const form = document.getElementById('creditForm');
   if (form) {
     form.addEventListener('submit', async (e) => {
@@ -208,6 +282,8 @@ function wireEvents() {
 (async function initAccount() {
   console.log('[account] init');
   log('Init started.');
+  showQueryToasts();
+
   try {
     memberId = await resolveMemberId();
     log('resolveMemberId() returned:', memberId);

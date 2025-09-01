@@ -4,19 +4,18 @@
   <meta charset="utf-8" />
   <title>LLC Portal – Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- Tailwind CDN -->
+  <!-- Tailwind CDN (fine for prototyping; warning is expected) -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<!-- Require auth; replace member-id dynamically (server or after login) -->
-<body class="bg-gray-50 font-sans" data-require-auth data-member-id="00000000-0000-0000-0000-000000000000">
+<!-- Require auth; let JS resolve memberId via members.auth_user_id -->
+<body class="bg-gray-50 font-sans" data-require-auth>
   <main class="max-w-4xl mx-auto p-6 space-y-6">
     <!-- Header -->
     <header class="flex items-center justify-between">
       <h1 class="text-2xl font-bold tracking-tight">Member Dashboard</h1>
       <div class="text-sm text-gray-600">
-        Welcome, <span id="memberName">—</span>
+        <span id="whoami">Loading…</span>
       </div>
     </header>
 
@@ -24,6 +23,7 @@
     <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
       <h2 class="text-sm text-gray-500">Capital Balance</h2>
       <div class="mt-1 text-3xl font-bold tabular-nums" id="balance">$0.00</div>
+      <div class="text-sm text-gray-600 mt-1">Welcome, <span id="memberName">—</span></div>
     </section>
 
     <!-- Add Credit Form -->
@@ -45,9 +45,7 @@
           placeholder="Note (optional)"
           class="border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
         />
-        <button
-          class="bg-black text-white rounded-md px-3 py-2 text-sm hover:bg-gray-800 transition"
-        >
+        <button class="bg-black text-white rounded-md px-3 py-2 text-sm hover:bg-gray-800 transition">
           Add
         </button>
       </form>
@@ -71,10 +69,15 @@
         </table>
       </div>
     </section>
+
+    <!-- Debug (so you can see logs from dashboard.js) -->
+    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+      <div class="text-sm text-gray-500 mb-2">Debug</div>
+      <pre id="debug" class="text-xs bg-gray-900 text-gray-100 p-3 rounded-md overflow-auto">waiting…</pre>
+    </section>
   </main>
 
-  <!-- Autoloads /js/pages/dashboard.js -->
+  <!-- Autoloads /js/pages/dashboard.js (relative from /pages/) -->
   <script type="module" src="../js/shared/bootstrap.js?v=2025-09-01"></script>
-
 </body>
 </html>

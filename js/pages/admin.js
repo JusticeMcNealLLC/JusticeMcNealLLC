@@ -16,7 +16,7 @@ async function showWhoAmI() {
   const who = $('#whoami');
   if (error || !data?.user) {
     who.textContent = 'Not signed in – redirecting…';
-    window.location.href = '/login.html';
+    window.location.href = '../pages/login.html';
     return;
   }
   who.textContent = `Signed in as ${data.user.email}`;
