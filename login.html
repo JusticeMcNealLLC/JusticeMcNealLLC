@@ -40,7 +40,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     document.getElementById('msg').textContent = '❌ ' + error.message;
   } else {
     document.getElementById('msg').textContent = '✅ Signed in! Redirecting...';
-    setTimeout(() => location.href = 'account.html', 800);
+    setTimeout(() => location.href = 'pages/account.html', 800);
   }
 });
 </script>
