@@ -1,26 +1,26 @@
 <!doctype html>
-<html lang="en" data-page="index">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <title>LLC Portal – Home</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body class="bg-gray-50 font-sans flex items-center justify-center min-h-screen">
+<body class="bg-gray-50 font-sans flex items-center justify-center min-h-screen"
+      data-page="index">
   <main class="text-center p-6">
     <h1 class="text-3xl font-bold tracking-tight mb-4">Welcome to the LLC Portal</h1>
-    <p class="text-gray-600 mb-6">
-      Redirecting you to the right place…
-    </p>
+    <p class="text-gray-600 mb-6">Redirecting you to the right place…</p>
     <p class="text-sm text-gray-400">
       If nothing happens, <a href="/pages/login.html" class="underline">click here to login</a>.
     </p>
+    <noscript class="block mt-4 text-sm text-red-700">
+      JavaScript is required to use the portal. Please enable JavaScript.
+    </noscript>
   </main>
 
-  <!-- Autoloads /js/pages/index.js -->
-  <script type="module" src="./js/shared/bootstrap.js?v=2025-09-01"></script>
+  <!-- Bootstrap will auto-load /js/pages/index.js -->
+  <script type="module" src="/js/shared/bootstrap.js?v=2025-09-01"></script>
 </body>
 </html>

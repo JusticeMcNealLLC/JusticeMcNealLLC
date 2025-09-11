@@ -5,56 +5,149 @@
   <title>LLC Portal – Admin</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Tailwind CDN -->
+  <!-- Tailwind (CDN for dev; build for prod) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          colors: { brand: '#111', muted: '#666' }
+          colors: {
+            navy:  '#1f2d4f',
+            cream: '#f6efe6',
+            coral: '#e26b4a',
+            line:  '#e5e7eb'
+          }
         }
       }
     }
   </script>
+
+  <!-- Tiny data-URI favicon (L on navy) -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231f2d4f'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-family='Arial' font-size='36' fill='white'%3EL%3C/text%3E%3C/svg%3E">
 </head>
 
-<!-- Require auth; only admins should access this page -->
-<body class="bg-gray-50 font-sans" data-require-auth>
-  <main class="max-w-lg mx-auto p-6">
-    <header class="mb-6">
-      <h1 class="text-2xl font-bold tracking-tight">Admin – Invite Member</h1>
-      <div id="whoami" class="text-sm text-gray-600">Loading…</div>
+<body class="bg-cream font-sans text-navy" data-require-auth="admin">
+  <!-- NAVBAR (inserted by /js/page_inserts/navbar.js) -->
+  <div id="navMount">
+    <div class="h-16 bg-navy/90"></div>
+  </div>
+
+  <main class="max-w-6xl mx-auto p-6 space-y-6">
+    <!-- Banners that index.js toggles -->
+    <div id="adminError" class="hidden rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"></div>
+    <div id="adminInfo"  class="hidden rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"></div>
+
+    <!-- Header -->
+    <header class="bg-white border border-line rounded-2xl p-6">
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 class="text-4xl font-serif tracking-tight">Admin — Members</h1>
+          <p class="mt-1 text-sm text-gray-600">Manage subscriptions, invoices, and statuses.</p>
+          <a href="/pages/account.html" class="mt-3 inline-flex items-center gap-2 text-sm text-navy/80 hover:text-navy">
+            <span aria-hidden="true">←</span> Back to Account
+          </a>
+        </div>
+
+        <!-- simple line art to mirror Contribute -->
+        <div class="mx-auto md:mx-0">
+          <svg width="280" height="110" viewBox="0 0 300 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-navy/70">
+            <g stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round">
+              <circle cx="135" cy="42" r="20"/><path d="M110 90c3-18 17-28 38-28s35 10 38 28"/>
+              <circle cx="65" cy="48" r="18"/><path d="M48 90c2-16 15-26 33-26s31 10 33 26"/>
+              <circle cx="205" cy="46" r="18"/><path d="M188 90c2-16 15-26 33-26s31 10 33 26"/>
+            </g>
+          </svg>
+        </div>
+      </div>
     </header>
 
-    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
-      <label class="block text-sm text-gray-600">Member email to invite</label>
-      <input
-        id="inviteEmail"
-        type="email"
-        placeholder="user@example.com"
-        class="mt-2 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-        required
-      />
-      <button
-        id="inviteBtn"
-        class="mt-4 w-full inline-flex items-center justify-center rounded-md bg-black text-white px-3 py-2 text-sm hover:bg-gray-800 transition"
-      >
-        Send invite
-      </button>
-      <div id="msg" class="mt-3 text-sm text-gray-500"></div>
+    <!-- Filters / Actions -->
+    <section class="bg-white border border-line rounded-2xl p-4 md:p-6">
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div class="flex flex-1 flex-col gap-3 sm:flex-row">
+          <!-- Search -->
+          <label class="sm:w-80">
+            <span class="sr-only">Search</span>
+            <input id="q" type="search" placeholder="Search name or email"
+                   class="w-full rounded-md border border-line bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-navy" />
+          </label>
 
-      <div class="mt-4">
-        <a href="/account.html" class="text-sm underline hover:no-underline">← Back to Account</a>
+          <!-- Status filter -->
+          <label class="sm:w-56">
+            <span class="sr-only">Status</span>
+            <select id="status"
+                    class="w-full rounded-md border border-line bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-navy">
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="past_due">Past due</option>
+              <option value="canceled">Canceled</option>
+              <option value="inactive">Inactive</option>
+              <option value="rejoining">Rejoining</option>
+              <option value="chargeback">Chargeback</option>
+              <option value="suspended">Suspended</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btnRefresh"
+                  class="inline-flex items-center gap-2 rounded-md border border-line bg-white px-4 py-2 text-sm hover:bg-gray-50">
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
     </section>
 
-    <p class="text-xs text-gray-400 mt-4">
-      You must be signed in with an admin account to use this tool.
-    </p>
+    <!-- Members skeleton -->
+    <section id="memberSkeleton" class="bg-white border border-line rounded-2xl p-6 animate-pulse">
+      <div class="flex items-center justify-between mb-4">
+        <div class="h-5 w-40 bg-gray-200 rounded"></div>
+        <div class="h-4 w-20 bg-gray-200 rounded"></div>
+      </div>
+      <div class="space-y-3">
+        <div class="h-14 bg-gray-200 rounded"></div>
+        <div class="h-14 bg-gray-200 rounded"></div>
+        <div class="h-14 bg-gray-200 rounded"></div>
+      </div>
+    </section>
+
+    <!-- Members list -->
+    <section class="bg-white border border-line rounded-2xl p-2 md:p-3">
+      <div class="flex items-center justify-between px-4 py-3">
+        <h2 class="text-lg font-semibold">Members</h2>
+        <div class="text-sm text-gray-600">Count: <span id="memberCount" class="tabular-nums">0</span></div>
+      </div>
+
+      <div class="border-t border-line"></div>
+
+      <!-- List container (index.js fills) -->
+<!-- Column headers (desktop-only) -->
+<div class="hidden md:grid px-4 py-2 text-xs font-medium text-gray-500
+            md:grid-cols-[1fr_7rem_6rem_7rem_7rem_4rem_24rem] gap-2">
+  <div>Member</div>
+  <div>Status</div>
+  <div class="text-right">Pledge</div>
+  <div class="text-right">Last Paid</div>
+  <div class="text-right">Cancels</div>   <!-- 👈 new -->
+  <div class="text-right">Missed</div>
+  <div class="text-right">Actions</div>
+</div>
+<div class="border-t border-line"></div>
+
+
+      <div id="memberList" class="divide-y divide-line">
+        <!-- rows injected by index.js -->
+      </div>
+    </section>
   </main>
 
-  <!-- Autoloads /js/pages/admin.js via bootstrap -->
-  <script type="module" src="../js/shared/bootstrap.js?v=2025-09-01"></script>
+  <!-- FOOTER (inserted) -->
+  <div id="footerMount"></div>
 
+  <!-- Modules -->
+  <script type="module" src="/js/shared/bootstrap.js"></script>
+  <script type="module" src="/js/page_inserts/navbar.js"></script>
+  <script type="module" src="/js/pages/admin/index.js"></script>
+  <script type="module" src="/js/page_inserts/footer.js"></script>
 </body>
 </html>

@@ -1,84 +1,147 @@
 // /js/pages/profile.js
-import { supabase } from '../shared/supabaseClient.js';
-import { $, $$ } from '../shared/dom.js';
-import { toast } from '../shared/ui.js';
-import { signOut } from '../shared/auth.js';
+import { supabase } from '/js/shared/supabaseClient.js';
+import { $, on } from '/js/shared/dom.js';
+import { toast } from '/js/shared/ui.js';
 
 function isRecovery() {
-  // Supabase appends hash params like #access_token=...&type=recovery
-  const hash = new URLSearchParams(window.location.hash.slice(1));
-  return (hash.get('type') === 'recovery') || hash.has('access_token');
+  const hash = new URLSearchParams(location.hash.slice(1));
+  return hash.get('type') === 'recovery' || hash.has('access_token');
 }
 
-async function showWhoAmI() {
-  const { data, error } = await supabase.auth.getUser();
-  const who = $('#whoami');
-  if (error || !data?.user) {
-    if (who) who.textContent = 'Not signed in – redirecting…';
-    window.location.href = '../login.html'; // profile is in /pages/
-    return;
-  }
-  if (who) who.textContent = `Signed in as ${data.user.email}`;
+async function getCurrentUser() {
+  const u = (await supabase.auth.getUser()).data.user;
+  if (u) return u;
+  const s = (await supabase.auth.getSession()).data.session;
+  return s?.user ?? null;
 }
 
-function wireEvents() {
-  $('#pwForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const pwInput = $('#newPw');
-    const pw = pwInput.value.trim();
-    const msg = $('#msg');
-
-    if (!pw || pw.length < 8) {
-      msg.className = 'mt-3 text-sm text-red-700';
-      msg.textContent = 'Password must be at least 8 characters.';
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.updateUser({ password: pw });
-      if (error) throw error;
-
-      msg.className = 'mt-3 text-sm text-emerald-700';
-      msg.textContent = '✅ Password updated';
-      $('#pwForm').reset();
-      toast('Password updated', { kind: 'success' });
-
-      // After a recovery reset, take them to account
-      if (isRecovery()) {
-        setTimeout(() => (window.location.href = './account.html'), 800);
-      }
-    } catch (err) {
-      console.error(err);
-      msg.className = 'mt-3 text-sm text-red-700';
-      msg.textContent = '❌ ' + (err?.message || 'Password update failed');
-      toast('Password update failed', { kind: 'error' });
-    }
-  });
-
-  $('#logout')?.addEventListener('click', async (e) => {
-    e.preventDefault();
-    try {
-      await signOut();
-      window.location.href = '../index.html';
-    } catch (err) {
-      toast('Sign out failed', { kind: 'error' });
-    }
-  });
+async function loadMember(userId) {
+  const { data, error } = await supabase
+    .from('members')
+    .select('id, full_name, phone')
+    .eq('auth_user_id', userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
 }
 
-(async function initProfile() {
+async function saveMember(memberId, patch) {
+  const { error } = await supabase.from('members').update(patch).eq('id', memberId);
+  if (error) throw error;
+}
+
+function validatePassword(pw, confirm) {
+  if (!pw || pw.length < 8) return 'Password must be at least 8 characters.';
+  if (pw !== confirm) return 'Passwords do not match.';
+  return null;
+}
+
+async function markInviteAcceptedIfAny() {
+  const { data: { user } } = await supabase.auth.getUser();
+  const email = user?.email;
+  if (!email) return;
+  // RPC: marks latest invite row for this email as accepted
+  try { await supabase.rpc('admin_invite_mark_accepted', { p_email: email }); }
+  catch (e) { console.warn('[profile] mark accepted RPC failed', e); }
+}
+
+async function init() {
   console.log('[profile] init');
-  await showWhoAmI();
 
-  if (isRecovery()) {
-    const msg = $('#msg');
-    if (msg) {
-      msg.className = 'mt-3 text-sm text-blue-700';
-      msg.textContent = 'Set a new password to complete the reset.';
+  const whoami = $('#whoami');
+  const fullName = $('#fullName');
+  const phone = $('#phone');
+  const msg = $('#msg');
+
+  const newPw = $('#newPassword');
+  const confirmPw = $('#confirmPassword');
+  const updatePwBtn = $('#updatePassword');
+
+  const saveBtn = $('#saveProfile');
+  const signOutBtn = $('#signOut');
+
+  try {
+    const user = await getCurrentUser();
+    if (!user) return location.replace('/pages/login.html');
+    whoami && (whoami.textContent = user.email);
+
+    // Load member
+    const member = await loadMember(user.id);
+    if (!member) {
+      msg && (msg.textContent = 'No member record found for this account.');
+    } else {
+      if (fullName) fullName.value = member.full_name ?? '';
+      if (phone) phone.value = member.phone ?? '';
     }
-    // Optionally, focus the field
-    $('#newPw')?.focus();
-  }
 
-  wireEvents();
-})();
+    // Save profile
+    if (saveBtn && member) {
+      on(saveBtn, 'click', async () => {
+        try {
+          saveBtn.disabled = true;
+          msg && (msg.textContent = 'Saving…');
+          await saveMember(member.id, {
+            full_name: fullName?.value.trim() ?? '',
+            phone: phone?.value.trim() ?? '',
+          });
+          toast('Profile saved', { kind: 'success' });
+          msg && (msg.textContent = '');
+        } catch (e) {
+          console.error(e);
+          toast('Failed to save profile', { kind: 'error' });
+          msg && (msg.textContent = 'Could not save. Check console for details.');
+        } finally {
+          saveBtn.disabled = false;
+        }
+      });
+    }
+
+    // Recovery hint
+    if (isRecovery()) {
+      msg && (msg.textContent = 'Set a new password to complete the reset.');
+      newPw?.focus();
+    }
+
+    // Change password
+    if (updatePwBtn) {
+      on(updatePwBtn, 'click', async () => {
+        const err = validatePassword(newPw?.value, confirmPw?.value);
+        if (err) return toast(err, { kind: 'error' });
+
+        try {
+          updatePwBtn.disabled = true;
+          const { error } = await supabase.auth.updateUser({ password: newPw.value });
+          if (error) throw error;
+
+          // ✅ mark invite accepted after successful password set
+          await markInviteAcceptedIfAny();
+
+          toast('Password updated', { kind: 'success' });
+          if (newPw) newPw.value = '';
+          if (confirmPw) confirmPw.value = '';
+
+          if (isRecovery()) setTimeout(() => location.replace('/pages/account.html'), 800);
+        } catch (e) {
+          console.error(e);
+          toast('Failed to update password', { kind: 'error' });
+        } finally {
+          updatePwBtn.disabled = false;
+        }
+      });
+    }
+
+    // Sign out
+    if (signOutBtn) {
+      on(signOutBtn, 'click', async () => {
+        await supabase.auth.signOut();
+        location.replace('/pages/login.html');
+      });
+    }
+  } catch (e) {
+    console.error(e);
+    toast('Error loading profile', { kind: 'error' });
+    msg && (msg.textContent = 'Error loading profile.');
+  }
+}
+
+init();

@@ -10,7 +10,7 @@ let memberId = null;
 // ---- Configure your Edge Function endpoints here ----
 const FUNCTIONS = {
   startContribution: 'https://onxkbrjtkparnldcjuqf.supabase.co/functions/v1/start-contribution',
-  customerPortal:    'https://onxkbrjtkparnldcjuqf.supabase.co/functions/v1/customer-portal', // <-- adjust if your portal fn has a different name
+  customerPortal:    'https://onxkbrjtkparnldcjuqf.supabase.co/functions/v1/manage-contribution', // <-- adjust if your portal fn has a different name
 };
 
 const dbg = () => $('#debug');

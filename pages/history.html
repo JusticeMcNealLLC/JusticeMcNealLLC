@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en" data-page="history">
+<head>
+  <meta charset="utf-8" />
+  <title>LLC Portal – Contribution History</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 font-sans" data-require-auth="member">
+  <!-- Navbar skeleton -->
+<div id="navMount">
+  <div class="h-16 bg-gray-200 animate-pulse"></div>
+</div>
+
+  <main class="max-w-4xl mx-auto p-6 space-y-6">
+    <header class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Contribution History</h1>
+        <p id="resultCount" class="text-xs text-gray-500 mt-1">—</p>
+      </div>
+      <a href="/pages/account.html" class="text-sm underline hover:no-underline">← Back to Account</a>
+    </header>
+
+    <!-- Invoice list -->
+    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5">
+      <div class="flex items-center justify-between p-5 border-b">
+        <h2 class="text-lg font-semibold">All invoices</h2>
+      </div>
+      <div id="invoiceList" class="divide-y"></div>
+
+      <div class="p-4">
+        <button id="btnLoadMore"
+                class="w-full rounded-md bg-gray-900 text-white px-4 py-2 text-sm hover:bg-gray-800">
+          Load more
+        </button>
+      </div>
+    </section>
+
+    <!-- Optional filter controls -->
+<div class="flex gap-2 mb-3">
+  <select id="statusFilter" class="border rounded px-2 py-1 text-sm">
+    <option value="">All statuses</option>
+    <option value="paid">Paid</option>
+    <option value="open">Open</option>
+    <option value="void">Void</option>
+    <option value="draft">Draft</option>
+  </select>
+  <input id="dateFrom" type="date" class="border rounded px-2 py-1 text-sm">
+  <input id="dateTo" type="date" class="border rounded px-2 py-1 text-sm">
+  <button id="btnExportCsv" class="ml-auto px-3 py-1 border rounded text-sm">Export CSV</button>
+</div>
+
+  </main>
+
+  <!-- Footer skeleton -->
+<div id="footerMount"></div>
+
+<script type="module" src="/js/shared/bootstrap.js"></script>
+<script type="module" src="/js/page_inserts/navbar.js"></script>
+<script type="module" src="/js/pages/history/index.js"></script>
+<script type="module" src="/js/page_inserts/footer.js"></script>
+
+</body>
+</html>
+
+
+</body>
+</html>

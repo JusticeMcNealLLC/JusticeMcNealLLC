@@ -5,82 +5,149 @@
   <title>LLC Portal – Account</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Tailwind CDN -->
+  <!-- Tailwind (CDN for dev; switch to CLI for prod) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: '#111',
-            muted: '#666',
-          }
-        }
-      }
-    }
+      theme: { extend: { colors: { brand: '#111', muted: '#667085' } } }
+    };
   </script>
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23111'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-family='Arial' font-size='36' fill='white'%3EL%3C/text%3E%3C/svg%3E">
 </head>
 
-<!-- Require auth for this page; set data-member-id after login or server-side -->
-<body class="bg-gray-50 font-sans" data-require-auth data-member-id="00000000-0000-0000-0000-000000000000">
-  <div class="max-w-3xl mx-auto p-6">
-    <header class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-6">
+<body class="bg-gray-50 font-sans" data-require-auth="member">
+  <!-- NAVBAR (injected) -->
+  <div id="navMount"><div class="h-16 bg-gray-200 animate-pulse"></div></div>
+
+  <main class="max-w-5xl mx-auto p-6 space-y-6">
+    <!-- Stripe return status banner -->
+    <div id="statusBanner" class="hidden rounded-md border px-4 py-3 text-sm"></div>
+
+    <!-- Header -->
+    <header class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 class="text-2xl font-bold tracking-tight">Member Account</h1>
-        <div id="whoami" class="text-sm text-gray-600">Loading…</div>
-      </div>
-      <button id="signOut" class="inline-flex items-center justify-center px-3 py-2 rounded-md bg-gray-200 text-sm hover:bg-gray-300 transition">
-        Sign out
-      </button>
-    </header>
-
-    <div id="flash" class="text-xs text-gray-500 mb-3"></div>
-
-    <section class="grid gap-4 md:grid-cols-2">
-      <!-- Balance card -->
-      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
-        <div class="text-sm text-gray-500">Capital Balance</div>
-        <div class="mt-1 text-3xl font-bold tabular-nums">
-          <span id="balance">$0.00</span>
-        </div>
-        <p class="mt-1 text-xs text-gray-400">Updates after Stripe marks your invoice as paid.</p>
-        <button id="refresh" class="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-sm rounded-md py-2 transition">
-          Refresh
-        </button>
-      </div>
-
-      <!-- Contributions card -->
-      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
-        <div class="text-sm text-gray-500">Contributions</div>
-        <div class="flex gap-2 mt-3">
-          <button id="startBtn" class="flex-1 bg-black text-white rounded-md py-2 text-sm hover:bg-gray-800 transition">
-            Start / Increase
-          </button>
-          <button id="manageBtn" class="flex-1 bg-gray-100 rounded-md py-2 text-sm hover:bg-gray-200 transition">
-            Manage in Portal
-          </button>
-        </div>
-        <p class="text-xs text-gray-400 mt-2 leading-relaxed">
-          “Start / Increase” opens Stripe Checkout.<br>
-          “Manage” opens the Stripe Customer Portal.
+        <h1 class="text-2xl font-bold tracking-tight">Your Account</h1>
+        <p class="text-sm text-gray-600">
+          Signed in as <span id="whoami" class="font-medium text-gray-900">Loading…</span>
         </p>
       </div>
+      <div class="flex gap-2">
+        <a href="/pages/contribute.html" class="rounded-md bg-black px-3 py-2 text-sm text-white hover:bg-gray-800">Change Contribution</a>
+        <button id="btnSignOut"
+                class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-100">
+          Sign out
+        </button>
+      </div>
+    </header>
+
+    <!-- Overview: skeleton -->
+    <section id="topSkeleton" class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5 animate-pulse">
+      <div class="grid gap-4 md:grid-cols-4">
+        <div class="space-y-2"><div class="h-3 w-24 bg-gray-200 rounded"></div><div class="h-7 w-24 bg-gray-200 rounded"></div></div>
+        <div class="space-y-2"><div class="h-3 w-28 bg-gray-200 rounded"></div><div class="h-7 w-28 bg-gray-200 rounded"></div></div>
+        <div class="space-y-2"><div class="h-3 w-28 bg-gray-200 rounded"></div><div class="h-7 w-32 bg-gray-200 rounded"></div></div>
+        <div class="space-y-2"><div class="h-3 w-32 bg-gray-200 rounded"></div><div class="h-8 w-40 bg-gray-200 rounded-full"></div></div>
+      </div>
     </section>
 
-    <!-- Debug card -->
-    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5 mt-6">
-      <div class="text-sm text-gray-500 mb-2">Recent (debug)</div>
-      <pre id="debug" class="text-xs bg-gray-900 text-gray-100 p-3 rounded-md overflow-auto">waiting…</pre>
+    <!-- Overview: content -->
+    <section id="topContent" class="hidden bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+      <div class="grid gap-4 md:grid-cols-4">
+        <div>
+          <div class="text-sm text-gray-500">Current Pledge</div>
+          <div id="currentPledge" class="text-2xl font-bold tabular-nums">$0</div>
+        </div>
+        <div>
+          <div class="text-sm text-gray-500">Lifetime Contributed</div>
+          <div id="totalContributed" class="text-2xl font-bold tabular-nums">$0</div>
+        </div>
+        <div>
+          <div class="text-sm text-gray-500">Next Billing</div>
+          <div id="nextBillingDate" class="text-lg font-semibold tabular-nums">—</div>
+        </div>
+        <div>
+          <div class="text-sm text-gray-500">Payment Method</div>
+          <div id="cardStatus" class="hidden rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-3 py-1.5 text-sm">
+            No default card. Use Billing Portal to add one.
+          </div>
+          <div id="cardSummary" class="hidden rounded-md border border-emerald-200 bg-emerald-50 text-emerald-800 px-3 py-1.5 text-sm">
+            <span id="cardSummaryTxt"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 flex flex-wrap gap-3">
+        <button id="btnBillingPortal" class="rounded-md bg-gray-100 px-3 py-2 text-sm hover:bg-gray-200">
+          Manage in Billing Portal
+        </button>
+        <button id="btnRefresh" class="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
+          Refresh
+        </button>
+        <span id="saveMsg" class="text-sm text-gray-500"></span>
+      </div>
     </section>
 
-    <p class="text-xs text-gray-400 mt-4">
-      Having trouble? Make sure you’re logged in on this device and contact an admin if you can’t access your account.
-    </p>
-  </div>
+    <!-- Invoices: skeleton -->
+    <section id="recentSkeleton" class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5 animate-pulse">
+      <div class="flex items-center justify-between mb-4">
+        <div class="h-5 w-40 bg-gray-200 rounded"></div>
+        <div class="h-4 w-28 bg-gray-200 rounded"></div>
+      </div>
+      <div class="space-y-3">
+        <div class="h-10 bg-gray-200 rounded"></div>
+        <div class="h-10 bg-gray-200 rounded"></div>
+        <div class="h-10 bg-gray-200 rounded"></div>
+      </div>
+      <p class="mt-4 h-4 w-64 bg-gray-200 rounded"></p>
+    </section>
 
-  <!-- Autoloads /js/pages/account.js via bootstrap -->
- <script type="module" src="../js/shared/bootstrap.js?v=2025-09-01"></script>
+    <!-- Invoices: content -->
+    <section id="recentContent" class="hidden bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-semibold">Recent invoices</h2>
+        <a href="/pages/history.html" class="text-sm text-gray-600 hover:text-gray-900">View full history →</a>
+      </div>
+      <div id="recentInvoices" class="divide-y border rounded-lg bg-white"></div>
+      <p class="text-xs text-gray-500">Click any row to view your hosted invoice.</p>
+    </section>
 
+    <!-- Debug console -->
+    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-medium text-gray-700">Page Debug (local)</h2>
+        <span class="text-xs text-gray-400">Only prints when APP.debug = true</span>
+      </div>
+      <pre id="debugLog" class="mt-3 h-48 w-full overflow-auto rounded-md bg-gray-900 p-3 text-[11px] leading-4 text-gray-100">logs will appear here…</pre>
+    </section>
 
+  </main>
+
+  <!-- FOOTER (injected) -->
+  <div id="footerMount"></div>
+
+  <!-- Modules -->
+  <script type="module" src="/js/shared/bootstrap.js"></script>
+  <script type="module" src="/js/page_inserts/navbar.js"></script>
+  <script type="module" src="/js/pages/account/index.js"></script>
+  <script type="module" src="/js/page_inserts/footer.js"></script>
+
+  <!-- Stripe return banner -->
+  <script>
+    (function () {
+      const status = new URLSearchParams(location.search).get('status');
+      const el = document.getElementById('statusBanner');
+      if (!status || !el) return;
+      el.classList.remove('hidden');
+      if (status === 'success') {
+        el.className = 'rounded-md border border-emerald-200 bg-emerald-50 text-emerald-800 px-4 py-3 text-sm';
+        el.textContent = 'Payment method updated / subscription started. Thanks!';
+      } else if (status === 'cancel') {
+        el.className = 'rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm';
+        el.textContent = 'Checkout was canceled. You can try again anytime.';
+      }
+    })();
+  </script>
 </body>
 </html>

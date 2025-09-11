@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en" data-page="contribute">
+<head>
+  <meta charset="utf-8" />
+  <title>LLC Portal – Contribute</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Tailwind (CDN for dev; swap to CLI for prod) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#1f2d4f',       /* deep header/navy */
+            cream: '#f6efe6',      /* page background */
+            coral: '#e26b4a',      /* confirm accent */
+            line:  '#e5e7eb'       /* card borders */
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Tiny data-URI favicon -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231f2d4f'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-family='Arial' font-size='36' fill='white'%3EL%3C/text%3E%3C/svg%3E">
+</head>
+
+<body class="bg-cream font-sans text-navy" data-require-auth="member">
+  <!-- NAVBAR (inserted by /js/page_inserts/navbar.js) -->
+  <div id="navMount">
+    <div class="h-16 bg-navy/90"></div>
+  </div>
+
+  <main class="max-w-5xl mx-auto p-6 space-y-6">
+    <!-- Stripe return status banner -->
+    <div id="statusBanner" class="hidden rounded-md border px-4 py-3 text-sm"></div>
+
+    <!-- Header -->
+    <header class="bg-white border border-line rounded-2xl p-6">
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 class="text-4xl font-serif tracking-tight">Contribute</h1>
+          <p class="mt-1 text-sm text-gray-600">
+            Signed in as <span id="whoami" class="font-medium text-navy">Loading…</span>
+          </p>
+          <p class="text-sm text-gray-600">Thanks for supporting the family fund.</p>
+          <a href="/pages/account.html" class="mt-3 inline-flex items-center gap-2 text-sm text-navy/80 hover:text-navy">
+            <span aria-hidden="true">←</span> Back to Account
+          </a>
+        </div>
+
+        <!-- Friendly line-art family header (simple inline SVG, no external assets) -->
+        <div class="mx-auto md:mx-0">
+          <svg width="300" height="120" viewBox="0 0 300 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-navy/70">
+            <g stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round">
+              <circle cx="65" cy="48" r="18"/><path d="M48 90c2-16 15-26 33-26s31 10 33 26"/>
+              <circle cx="135" cy="42" r="20"/><path d="M110 90c3-18 17-28 38-28s35 10 38 28"/>
+              <circle cx="205" cy="46" r="18"/><path d="M188 90c2-16 15-26 33-26s31 10 33 26"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </header>
+
+    <!-- ───────── Overview (SKELETON) -->
+    <section id="topSkeleton" class="bg-white border border-line rounded-2xl p-6 animate-pulse">
+      <div class="grid gap-6 md:grid-cols-3">
+        <div class="space-y-2"><div class="h-3 w-28 bg-gray-200 rounded"></div><div class="h-8 w-24 bg-gray-200 rounded"></div></div>
+        <div class="space-y-2"><div class="h-3 w-36 bg-gray-200 rounded"></div><div class="h-8 w-28 bg-gray-200 rounded"></div></div>
+        <div class="space-y-2"><div class="h-3 w-40 bg-gray-200 rounded"></div><div class="h-8 w-40 bg-gray-200 rounded"></div></div>
+      </div>
+    </section>
+
+    <!-- ───────── Overview (CONTENT) -->
+    <section id="topContent" class="hidden bg-white border border-line rounded-2xl p-6">
+      <div class="grid gap-6 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line">
+        <div class="pr-0 md:pr-6">
+          <div class="text-sm text-gray-500">Current Pledge</div>
+          <div id="currentPledge" class="text-3xl font-bold tabular-nums">$0</div>
+        </div>
+        <div class="pt-6 md:pt-0 md:px-6">
+          <div class="text-sm text-gray-500">Total Contributed</div>
+          <div id="totalContributed" class="text-3xl font-bold tabular-nums">$0</div>
+        </div>
+        <div class="pt-6 md:pt-0 md:pl-6">
+          <div class="text-sm text-gray-500">Next Billing</div>
+          <div class="mt-1 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-indigo-800">
+            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1z"/>
+              <path d="M18 9H2v7a2 2 0 002 2h12a2 2 0 002-2V9z"/>
+            </svg>
+            <span id="nextBillingDate" class="text-base font-semibold">—</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Two-column main content -->
+    <div class="grid gap-6 md:grid-cols-2">
+      <!-- Left column -->
+      <div class="space-y-6">
+        <!-- How it works -->
+        <section class="bg-white border border-line rounded-2xl p-6">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-amber-700">♡</span>
+            <h2 class="text-lg font-semibold">How it works</h2>
+          </div>
+          <ul class="list-disc pl-6 text-sm text-gray-700 space-y-1">
+            <li>$1 × quantity selected</li>
+            <li>Changes apply to next billing</li>
+            <li>Default card required</li>
+            <li>Cancel anytime</li>
+          </ul>
+        </section>
+
+        <!-- Set pledge -->
+        <section class="bg-white border border-line rounded-2xl p-6 space-y-4">
+          <h2 class="text-lg font-semibold">Set monthly contribution</h2>
+
+<!-- Top amber band with two pills -->
+<div class="rounded-xl border border-amber-100 bg-amber-50 p-2 mb-3">
+  <div class="flex items-center justify-between gap-2">
+    <!-- Left pill: amount input -->
+    <label for="pledgeInput" class="sr-only">Monthly contribution</label>
+    <div class="flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1.5 shadow-sm">
+      <span class="text-gray-500">$</span>
+      <input id="pledgeInput" type="number" min="50" step="10" inputmode="numeric"
+             class="w-20 bg-transparent text-navy font-semibold outline-none"
+             aria-label="Monthly contribution amount" />
+      <span class="text-gray-400 text-sm">/mo</span>
+    </div>
+
+    <!-- Right pill: secondary value preview (auto-updated) -->
+    <span id="pledgeAlt"
+          class="rounded-full bg-amber-100 px-3 py-1 text-sm font-medium text-amber-800 whitespace-nowrap">
+      $20/mo
+    </span>
+  </div>
+</div>
+
+<!-- Slider -->
+<div class="space-y-2 mb-2">
+  <input id="pledgeSlider" type="range" min="50" max="2000" step="10"
+         class="w-full accent-navy" aria-label="Monthly contribution in dollars" />
+  <div class="flex justify-between text-xs text-gray-500"><span>$50</span><span>$2,000</span></div>
+</div>
+
+<!-- Preset chips -->
+<div class="mb-3 flex flex-wrap gap-2">
+  <button data-preset="50"  class="preset rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50">$50</button>
+  <button data-preset="100" class="preset rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50">$100</button>
+  <button data-preset="250" class="preset rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50">$250</button>
+  <button data-preset="500" class="preset rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50">$500</button>
+</div>
+
+<!-- Card chip (amber) -->
+<div id="cardStatus"
+     class="hidden rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 mb-3">
+  No default card on file. You’ll be sent to the Billing Portal to add one.
+</div>
+<div id="cardSummary"
+     class="hidden rounded-md border border-amber-200 bg-amber-100 px-3 py-2 text-sm text-navy mb-3">
+  <span class="inline-flex items-center gap-2">
+    <span class="inline-flex h-4 w-4 items-center justify-center rounded bg-blue-600 text-white text-[10px] leading-none">✓</span>
+    <span id="cardSummaryTxt">Visa •••• 4242 exp 03/28</span>
+  </span>
+</div>
+
+<!-- CTA + portal link -->
+<button id="btnOpenConfirm"
+        class="mb-1 w-full rounded-md bg-navy px-4 py-2 text-sm text-white hover:bg-navy/90">
+  Update Contribution
+</button>
+<div class="text-center">
+  <a id="btnBillingPortal" class="text-sm text-navy/80 underline underline-offset-2 hover:text-navy"
+     href="javascript:void(0)">
+    Manage in Billing Portal
+  </a>
+</div>
+
+        </section>
+
+        <!-- Recent contributions -->
+        <section id="recentContent" class="hidden bg-white border border-line rounded-2xl p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Recent contributions</h2>
+            <a href="/pages/history.html" class="text-sm text-navy/80 hover:text-navy">View full history →</a>
+          </div>
+          <div id="recentInvoices" class="divide-y border rounded-lg bg-white"></div>
+          <p class="text-xs text-gray-500">Click any row to view your hosted invoice.</p>
+        </section>
+
+        <!-- Recent skeleton -->
+        <section id="recentSkeleton" class="bg-white border border-line rounded-2xl p-6 animate-pulse">
+          <div class="flex items-center justify-between mb-4">
+            <div class="h-5 w-40 bg-gray-200 rounded"></div>
+            <div class="h-4 w-28 bg-gray-200 rounded"></div>
+          </div>
+          <div class="space-y-3">
+            <div class="h-10 bg-gray-200 rounded"></div>
+            <div class="h-10 bg-gray-200 rounded"></div>
+            <div class="h-10 bg-gray-200 rounded"></div>
+          </div>
+          <p class="mt-4 h-4 w-64 bg-gray-200 rounded"></p>
+        </section>
+      </div>
+
+      <!-- Right column -->
+      <div class="space-y-6">
+        <!-- Projection (metrics) -->
+        <section class="bg-white border border-line rounded-2xl p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold">Projection</h2>
+            <label class="text-sm text-gray-600">Horizon:
+              <select id="horizon" class="ml-2 rounded-md border border-line px-2 py-1 text-sm">
+                <option value="3">3 months</option>
+                <option value="6" selected>6 months</option>
+                <option value="12">12 months</option>
+                <option value="24">24 months</option>
+              </select>
+            </label>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-3">
+            <div><div class="text-sm text-gray-500">Projected Balance</div><div id="projBalance" class="text-xl font-semibold tabular-nums">$0</div></div>
+            <div><div class="text-sm text-gray-500">Borrowing LTV</div><div id="projLTV" class="text-xl font-semibold">60%</div></div>
+            <div><div class="text-sm text-gray-500">Est. Borrowing Power</div><div id="projPower" class="text-xl font-semibold tabular-nums">$0</div></div>
+          </div>
+          <p class="text-xs text-gray-500">Estimates are illustrative. Actual availability may differ.</p>
+        </section>
+
+        <!-- Projection table placeholder (optional visual symmetry) -->
+        <section class="bg-white border border-line rounded-2xl p-6">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-lg font-semibold">Projection</h2>
+            <span class="text-sm text-gray-500">Horizon: <span class="align-middle">6 months</span></span>
+          </div>
+          <div class="text-sm text-gray-500 border-t border-line pt-3">
+            <div class="grid grid-cols-3 font-medium text-navy/80 mb-2">
+              <span>Period</span><span>Projection</span><span class="text-right">Amount</span>
+            </div>
+            <div class="divide-y divide-line">
+              <div class="grid grid-cols-3 py-2"><span>Month 1</span><span>$7,902</span><span class="text-right">$2,795</span></div>
+              <div class="grid grid-cols-3 py-2"><span>Month 2</span><span>$8,210</span><span class="text-right">$2,960</span></div>
+              <div class="grid grid-cols-3 py-2"><span>Month 3</span><span>$8,520</span><span class="text-right">$3,120</span></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div class="w-full max-w-md rounded-2xl bg-white border border-line p-6 shadow-lg">
+        <h2 class="text-xl font-semibold mb-3">Confirm Contribution Update</h2>
+        <div id="confirmBody" class="text-sm text-gray-700 space-y-2"></div>
+        <div class="mt-5 flex justify-end gap-3">
+          <button id="btnCancelConfirm" class="px-4 py-2 rounded-lg border border-line bg-white text-navy hover:bg-gray-50">Cancel</button>
+          <button id="btnConfirmUpdate" class="px-4 py-2 rounded-lg bg-coral text-white hover:bg-coral/90">Confirm</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER (inserted by /js/page_inserts/footer.js) -->
+  <div id="footerMount"></div>
+
+  <!-- Modules -->
+  <script type="module" src="/js/shared/bootstrap.js"></script>
+  <script type="module" src="/js/page_inserts/navbar.js"></script>
+  <script type="module" src="/js/pages/contribute/index.js"></script>
+  <script type="module" src="/js/page_inserts/footer.js"></script>
+
+  <!-- Stripe return banner -->
+  <script>
+    (function () {
+      const status = new URLSearchParams(location.search).get('status');
+      const el = document.getElementById('statusBanner');
+      if (!status || !el) return;
+      el.classList.remove('hidden');
+      if (status === 'success') {
+        el.className = 'rounded-md border border-emerald-200 bg-emerald-50 text-emerald-800 px-4 py-3 text-sm';
+        el.textContent = 'Payment method updated / subscription started. Thanks!';
+      } else if (status === 'cancel') {
+        el.className = 'rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm';
+        el.textContent = 'Checkout was canceled. You can try again anytime.';
+      }
+    })();
+  </script>
+</body>
+</html>
