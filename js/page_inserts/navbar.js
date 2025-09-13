@@ -48,7 +48,22 @@ function renderNav() {
               <a href="/index.html#events"      class="nav-link">Events</a>
               <a href="/index.html#photos"      class="nav-link">Photos</a>
               <a href="/index.html#goals"       class="nav-link">Goals</a>
-              <a id="navAdmin" href="/pages/admin.html" class="nav-link hidden">Admin</a>
+
+              <!-- Admin dropdown (admin-only) -->
+              <div id="adminGroup" class="relative hidden">
+                <button id="adminMenuBtn"
+                        class="nav-link inline-flex items-center gap-1"
+                        aria-haspopup="menu" aria-expanded="false">
+                  Admin
+                  <svg class="inline-block" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div id="adminMenu"
+                     class="absolute left-0 mt-1 w-44 overflow-hidden rounded-xl bg-white text-slate-900 shadow-xl ring-1 ring-slate-900/10 hidden">
+                  <a href="/pages/admin.html"      class="block px-3 py-2 text-sm hover:bg-slate-100">Members</a>
+                  <a id="dashboardNav" href="/pages/dashboard.html" class="block px-3 py-2 text-sm hover:bg-slate-100">Dashboard</a>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -99,11 +114,24 @@ function renderNav() {
         <div id="mobileMenu" class="md:hidden hidden pb-3">
           <a href="/pages/account.html"     class="mnav-link">Account</a>
           <a href="/pages/contribute.html"  class="mnav-link">Contribute</a>
-         <!-- <a href="/pages/history.html"     class="mnav-link">History</a> -->
+          <!-- <a href="/pages/history.html"     class="mnav-link">History</a> -->
           <a href="/index.html#events"      class="mnav-link">Events</a>
           <a href="/index.html#photos"      class="mnav-link">Photos</a>
           <a href="/index.html#goals"       class="mnav-link">Goals</a>
-          <a id="navAdminMobile" href="/pages/admin.html" class="mnav-link hidden">Admin</a>
+
+          <!-- Mobile Admin (admin-only) -->
+          <div id="adminGroupMobile" class="hidden mt-1">
+            <button id="adminMobileToggle"
+                    class="mnav-link w-full text-left inline-flex items-center justify-between">
+              <span>Admin</span>
+              <svg class="ml-2" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div id="adminMobileMenu" class="pl-3 mt-1 hidden">
+              <a href="/pages/admin.html"            class="mnav-link">Members</a>
+              <a id="dashboardNavMobile" href="/pages/dashboard.html" class="mnav-link">Dashboard</a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -135,8 +163,9 @@ function isHome() {
 function setActiveLinks() {
   const path = location.pathname.replace(/\/+$/, '');
   const hash = location.hash || '';
-  $$('.nav-link, .mnav-link').forEach(a => {
+  $$('.nav-link, .mnav-link, #adminMenu a').forEach(a => {
     const href = a.getAttribute('href') || '';
+    if (!href) return;
     const onSamePath = href.includes('#')
       ? path.endsWith('/index.html') || path === '' || path === '/'
       : path.endsWith(href.replace(/\/+$/,''));
@@ -158,7 +187,6 @@ async function showAdminAndProfile() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  // Prefer members.is_admin + full_name/email
   let isAdmin = false, first = (user.email || '').split('@')[0] || 'Member', full = '';
   try {
     const { data: me } = await supabase
@@ -175,8 +203,11 @@ async function showAdminAndProfile() {
     $('#pmEmail') && ($('#pmEmail').textContent = me?.email || user.email || '—');
   } catch { /* ignore */ }
 
-  $('#navAdmin')?.classList.toggle('hidden', !isAdmin);
-  $('#navAdminMobile')?.classList.toggle('hidden', !isAdmin);
+  // Toggle admin-only groups
+  $('#adminGroup')?.classList.toggle('hidden', !isAdmin);
+  $('#adminGroupMobile')?.classList.toggle('hidden', !isAdmin);
+  $('#dashboardNav')?.classList.toggle('hidden', !isAdmin);
+  $('#dashboardNavMobile')?.classList.toggle('hidden', !isAdmin);
 
   // Hello, {First}
   const hello = $('#navHelloName');
@@ -230,10 +261,41 @@ function setupMobileMenu() {
   const panel = $('#mobileMenu');
   if (!btn || !panel) return;
   btn.addEventListener('click', () => {
-    const hidden = panel.classList.toggle('hidden'); // returns true if now hidden
+    const hidden = panel.classList.toggle('hidden');
     btn.setAttribute('aria-expanded', String(!hidden));
   });
   $$('.mnav-link', panel).forEach(a => a.addEventListener('click', () => panel.classList.add('hidden')));
+}
+
+function setupAdminDropdown() {
+  const btn = $('#adminMenuBtn');
+  const menu = $('#adminMenu');
+  if (!btn || !menu) return;
+
+  function close() {
+    menu.classList.add('hidden');
+    btn.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('click', onDoc);
+    document.removeEventListener('keydown', onEsc);
+  }
+  function onDoc(e) { if (!menu.contains(e.target) && !btn.contains(e.target)) close(); }
+  function onEsc(e)  { if (e.key === 'Escape') close(); }
+
+  btn.addEventListener('click', () => {
+    const isOpen = !menu.classList.contains('hidden');
+    menu.classList.toggle('hidden');
+    btn.setAttribute('aria-expanded', String(!isOpen));
+    if (!isOpen) { document.addEventListener('click', onDoc); document.addEventListener('keydown', onEsc); }
+  });
+}
+
+function setupAdminMobile() {
+  const toggle = $('#adminMobileToggle');
+  const panel  = $('#adminMobileMenu');
+  if (!toggle || !panel) return;
+  toggle.addEventListener('click', () => {
+    panel.classList.toggle('hidden');
+  });
 }
 
 /* ---------- Mount ---------- */
@@ -246,6 +308,8 @@ async function mountNavbar() {
   setupBackButton();
   setupAvatarMenu();
   setupMobileMenu();
+  setupAdminDropdown();
+  setupAdminMobile();
   await showAdminAndProfile();
 }
 

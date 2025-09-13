@@ -21,7 +21,17 @@ async function showWhoAmI() {
   } catch {}
 }
 
-// ---------- data ----------
+// ---------- helpers ----------
+function setMetric(sel, text) {
+  const el = $(sel);
+  if (el) el.textContent = text;
+}
+async function getAccessToken() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token || null;
+}
+
+// ---------- data: core queries ----------
 async function loadAllBalances() {
   const { data, error } = await supabase
     .from('vw_capital_balances')
@@ -52,18 +62,75 @@ async function loadContributions30d() {
   return (data || []).reduce((sum, r) => sum + (r.amount_cents || 0), 0);
 }
 
-// ---------- helpers ----------
-function setMetric(sel, text) {
-  const el = $(sel);
-  if (el) el.textContent = text;
+// ---------- data: member count via Edge Function (admin-only) ----------
+/**
+ * Preferred: count active members by calling the secured edge function.
+ * GET /functions/v1/admin-list-members?status=active
+ * Returns an array of member rows; we use its .length as the count.
+ */
+async function loadActiveMemberCountViaEdge() {
+  const token = await getAccessToken();
+  if (!token) throw new Error('No auth token');
+
+  // Use relative path; your edge CORS already whitelists your origins.
+  const url = `/functions/v1/admin-list-members?status=active`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/json'
+    }
+  });
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    throw new Error(`admin-list-members ${res.status}: ${txt || 'HTTP error'}`);
+  }
+  const rows = await res.json();
+  return Array.isArray(rows) ? rows.length : 0;
+}
+
+/**
+ * Fallback: direct DB count in case the edge call fails (e.g., CORS, config).
+ */
+async function loadActiveMemberCountDirect() {
+  const { count, error } = await supabase
+    .from('members')
+    .select('id', { count: 'exact', head: true })
+    .eq('membership_status', 'active');
+  if (error) throw error;
+  return count || 0;
+}
+
+/**
+ * Wrapper: try edge function first, then fallback to direct.
+ */
+async function loadActiveMemberCount() {
+  try {
+    return await loadActiveMemberCountViaEdge();
+  } catch (e) {
+    log('edge member count failed, falling back', { error: String(e?.message || e) });
+    return await loadActiveMemberCountDirect();
+  }
+}
+
+// (Optional) lifetime positive contributions — shown only if #cardAllTime exists
+async function loadContributionsAllTime() {
+  const { data, error } = await supabase
+    .from('capital_ledger')
+    .select('amount_cents')
+    .gt('amount_cents', 0);
+  if (error) throw error;
+  return (data || []).reduce((sum, r) => sum + (r.amount_cents || 0), 0);
 }
 
 // ---------- renderers ----------
-function renderMetricCards({ totalCents, memberCount, contrib30dCents }) {
+function renderMetricCards({ totalCents, memberCount, contrib30dCents, contribAllTimeCents }) {
   setMetric('#cardTotal', formatCents(totalCents));
   setMetric('#cardMembers', String(memberCount));
   setMetric('#card30d', formatCents(contrib30dCents));
   setMetric('#cardUpdated', formatDate(new Date().toISOString()));
+  if ($('#cardAllTime')) setMetric('#cardAllTime', formatCents(contribAllTimeCents || 0));
 }
 
 function renderBalancesTable(rows) {
@@ -163,15 +230,28 @@ async function refreshAll() {
   try {
     log('refreshing…');
 
-    const [balances, recent, contrib30dCents] = await Promise.all([
+    const [
+      balances,              // vw_capital_balances
+      recent,                // latest ledger rows
+      contrib30dCents,       // positive last 30d
+      activeCount,           // only active members (edge -> fallback)
+      contribAllTimeCents    // optional: lifetime positive contributions
+    ] = await Promise.all([
       loadAllBalances(),
       loadRecentLedger(50),
       loadContributions30d(),
+      loadActiveMemberCount(),
+      loadContributionsAllTime(),
     ]);
 
     const totalCents = balances.reduce((sum, r) => sum + (r.capital_balance_cents || 0), 0);
-    const memberCount = balances.length;
-    renderMetricCards({ totalCents, memberCount, contrib30dCents });
+
+    renderMetricCards({
+      totalCents,
+      memberCount: activeCount,
+      contrib30dCents,
+      contribAllTimeCents
+    });
 
     renderBalancesTable(balances);
 
