@@ -4,66 +4,105 @@
   <meta charset="utf-8" />
   <title>LLC Portal – Contribution History</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Tailwind (CDN for dev; build for prod) -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          boxShadow: { soft: '0 10px 25px -10px rgba(2,6,23,.15)' },
+          colors: {
+            navy:  '#1f2d4f',
+            cream: '#f6efe6',
+            coral: '#e26b4a',
+            line:  '#e5e7eb'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Tiny favicon -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231f2d4f'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-family='Arial' font-size='36' fill='white'%3EL%3C/text%3E%3C/svg%3E">
 </head>
 
-<body class="bg-gray-50 font-sans" data-require-auth="member">
-  <!-- Navbar skeleton -->
-<div id="navMount">
-  <div class="h-16 bg-gray-200 animate-pulse"></div>
-</div>
+<body class="bg-cream font-sans text-navy" data-require-auth="member">
+  <!-- NAVBAR (injected by /js/page_inserts/navbar.js); placeholder avoids CLS -->
+  <div id="navMount"><div class="h-16 bg-navy/90"></div></div>
 
-  <main class="max-w-4xl mx-auto p-6 space-y-6">
-    <header class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold tracking-tight">Contribution History</h1>
-        <p id="resultCount" class="text-xs text-gray-500 mt-1">—</p>
+  <main class="max-w-5xl mx-auto p-6 space-y-6">
+    <!-- Header -->
+    <header class="bg-white border border-line rounded-2xl p-6">
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 class="text-3xl font-serif tracking-tight">Contribution History</h1>
+          <p id="resultCount" class="text-xs text-gray-600 mt-1">—</p>
+          <a href="/pages/account.html"
+             class="mt-3 inline-flex items-center gap-2 text-sm text-navy/80 hover:text-navy">
+            <span aria-hidden="true">←</span> Back to Account
+          </a>
+        </div>
+
+        <!-- simple line art to echo the Contribute header -->
+        <div class="mx-auto md:mx-0">
+          <svg width="280" height="110" viewBox="0 0 300 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-navy/70">
+            <g stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round">
+              <circle cx="135" cy="42" r="20"/><path d="M110 90c3-18 17-28 38-28s35 10 38 28"/>
+              <circle cx="65" cy="48" r="18"/><path d="M48 90c2-16 15-26 33-26s31 10 33 26"/>
+              <circle cx="205" cy="46" r="18"/><path d="M188 90c2-16 15-26 33-26s31 10 33 26"/>
+            </g>
+          </svg>
+        </div>
       </div>
-      <a href="/pages/account.html" class="text-sm underline hover:no-underline">← Back to Account</a>
     </header>
 
-    <!-- Invoice list -->
-    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5">
-      <div class="flex items-center justify-between p-5 border-b">
-        <h2 class="text-lg font-semibold">All invoices</h2>
-      </div>
-      <div id="invoiceList" class="divide-y"></div>
+    <!-- Filters -->
+    <section class="bg-white border border-line rounded-2xl p-6">
+      <div class="flex flex-wrap items-center gap-2">
+        <select id="statusFilter" class="border border-line rounded-md px-3 py-2 text-sm">
+          <option value="">All statuses</option>
+          <option value="paid">Paid</option>
+          <option value="open">Open</option>
+          <option value="void">Void</option>
+          <option value="draft">Draft</option>
+        </select>
 
-      <div class="p-4">
-        <button id="btnLoadMore"
-                class="w-full rounded-md bg-gray-900 text-white px-4 py-2 text-sm hover:bg-gray-800">
-          Load more
+        <input id="dateFrom" type="date" class="border border-line rounded-md px-3 py-2 text-sm" />
+        <input id="dateTo"   type="date" class="border border-line rounded-md px-3 py-2 text-sm" />
+
+        <button id="btnExportCsv"
+                class="ml-auto rounded-md border border-line bg-white px-3 py-2 text-sm hover:bg-gray-50">
+          Export CSV
         </button>
       </div>
     </section>
 
-    <!-- Optional filter controls -->
-<div class="flex gap-2 mb-3">
-  <select id="statusFilter" class="border rounded px-2 py-1 text-sm">
-    <option value="">All statuses</option>
-    <option value="paid">Paid</option>
-    <option value="open">Open</option>
-    <option value="void">Void</option>
-    <option value="draft">Draft</option>
-  </select>
-  <input id="dateFrom" type="date" class="border rounded px-2 py-1 text-sm">
-  <input id="dateTo" type="date" class="border rounded px-2 py-1 text-sm">
-  <button id="btnExportCsv" class="ml-auto px-3 py-1 border rounded text-sm">Export CSV</button>
-</div>
+    <!-- All invoices -->
+    <section class="bg-white border border-line rounded-2xl shadow-soft overflow-hidden">
+      <div class="flex items-center justify-between p-5 border-b border-line">
+        <h2 class="text-lg font-semibold">All invoices</h2>
+      </div>
 
+      <!-- Populated by JS -->
+      <div id="invoiceList" class="divide-y divide-line"></div>
+
+      <div class="p-4">
+        <button id="btnLoadMore"
+                class="w-full rounded-md bg-navy text-white px-4 py-2 text-sm hover:bg-navy/90">
+          Load more
+        </button>
+      </div>
+    </section>
   </main>
 
-  <!-- Footer skeleton -->
-<div id="footerMount"></div>
+  <!-- FOOTER (injected) -->
+  <div id="footerMount"></div>
 
-<script type="module" src="/js/shared/bootstrap.js"></script>
-<script type="module" src="/js/page_inserts/navbar.js"></script>
-<script type="module" src="/js/pages/history/index.js"></script>
-<script type="module" src="/js/page_inserts/footer.js"></script>
-
-</body>
-</html>
-
-
+  <!-- Scripts (unchanged so your logic keeps working) -->
+  <script type="module" src="/js/shared/bootstrap.js"></script>
+  <script type="module" src="/js/page_inserts/navbar.js"></script>
+  <script type="module" src="/js/pages/history/index.js"></script>
+  <script type="module" src="/js/page_inserts/footer.js"></script>
 </body>
 </html>

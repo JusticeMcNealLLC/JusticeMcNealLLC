@@ -20,6 +20,8 @@ import {
 
 import { openMemberDrawer } from './memberDrawer.js';
 import { toast } from '/js/shared/ui.js';
+import { supabase } from '/js/shared/supabaseClient.js';
+import { FUNCTIONS } from '/js/shared/config.js';
 
 let __booted = false;
 let __state = { members: [] };
@@ -139,21 +141,103 @@ export async function refresh({ showLoad=true, animate=true } = {}) {
 }
 
 function handleLiveFilter() {
-  // 1) Immediate local filter/sort — NO animation (prevents double flicker)
+  // Immediate local filter/sort — NO animation (prevents double flicker)
   applyFiltersAndRender({ animate: false });
 
-  // 2) Soft debounce server refresh ONLY when q or status changed
+  // Soft debounce server refresh ONLY when q or status changed
   clearTimeout(__liveTimer);
   const { q, status } = readControls();
   const needsServer = (q !== __lastServerQuery.q) || (status !== __lastServerQuery.status);
   if (!needsServer) return;
 
   __liveTimer = setTimeout(() => {
-    // silent refresh (no skeleton, no animation)
-    refresh({ showLoad: false, animate: false });
+    refresh({ showLoad: false, animate: false }); // silent refresh
   }, 350);
 }
 
+/* ===== Invite wiring (uses existing /functions/v1/admin-invite) ===== */
+function getAdminInviteUrl() {
+  // Prefer config if present, else fallback to the canonical path on this project
+  return (FUNCTIONS && FUNCTIONS.adminInvite) || `${supabase.supabaseUrl}/functions/v1/admin-invite`;
+}
+function msgInvite(el, text, ok) {
+  if (!el) { ok ? showInfo(text) : showError(text); return; }
+  el.className = 'mt-3 rounded-md px-3 py-2 text-sm ' +
+    (ok
+      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+      : 'bg-amber-50 text-amber-800 border border-amber-200');
+  el.textContent = text;
+  el.classList.remove('hidden');
+}
+function uuidish() { try { return crypto.randomUUID(); } catch { return 'req-' + Date.now(); } }
+
+async function callAdminInvite(email) {
+  const { data:{ session } } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error('Not authenticated');
+
+  const res = await fetch(getAdminInviteUrl(), {
+    method: 'POST',
+    headers: {
+      'Content-Type':'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+      'apikey': supabase.supabaseKey ?? undefined,
+    },
+    body: JSON.stringify({ email, request_id: uuidish() }),
+  });
+
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json?.error || res.statusText);
+  return json;
+}
+
+(function setupInviteForm(){
+  const form      = document.getElementById('inviteForm');
+  if (!form) return; // page may not include the card yet
+
+  const emailEl   = document.getElementById('inviteEmail');
+  const resetBtn  = document.getElementById('btnInviteReset');
+  const btnInvite = document.getElementById('btnInvite');
+  const msgEl     = document.getElementById('inviteMsg');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = (emailEl.value || '').trim().toLowerCase();
+    if (!email) return;
+
+    if (btnInvite) {
+      btnInvite.setAttribute('disabled','true');
+      btnInvite.textContent = 'Sending…';
+    }
+    msgInvite(msgEl, 'Sending invite…', true);
+
+    try {
+      await callAdminInvite(email);
+      msgInvite(msgEl, `Invite sent to ${email}.`, true);
+
+      emailEl.value = '';
+      const chk = document.getElementById('inviteIsAdmin'); // optional UI only
+      if (chk) chk.checked = false;
+
+      document.dispatchEvent(new CustomEvent('admin:refresh'));
+    } catch (err) {
+      msgInvite(msgEl, String(err?.message || err), false);
+    } finally {
+      if (btnInvite) {
+        btnInvite.removeAttribute('disabled');
+        btnInvite.textContent = 'Send invite';
+      }
+    }
+  });
+
+  resetBtn?.addEventListener('click', () => {
+    emailEl.value = '';
+    const chk = document.getElementById('inviteIsAdmin');
+    if (chk) chk.checked = false;
+    msgEl?.classList.add('hidden');
+  });
+})();
+
+/* ================== Boot ================== */
 export async function boot() {
   if (__booted) return; __booted = true;
   bindUI({ onRefresh: () => refresh({ showLoad:true, animate:true }), onLiveFilter: handleLiveFilter });

@@ -1,79 +1,87 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-page="dashboard">
 <head>
   <meta charset="utf-8" />
   <title>LLC Portal – Admin Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Tailwind (CDN for dev; switch to CLI/PostCSS in prod) -->
+  <!-- Tailwind (CDN for dev; use CLI/PostCSS in prod) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          colors: { brand: '#111', muted: '#6b7280' }
+          boxShadow: { soft: '0 10px 25px -10px rgba(2,6,23,.15)' },
+          colors: {
+            navy:  '#1f2d4f',
+            cream: '#f6efe6',
+            coral: '#e26b4a',
+            line:  '#e5e7eb'
+          }
         }
       }
     }
   </script>
 
-  <!-- Chart.js for the pie -->
+  <!-- Chart.js for the pie (same as before) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 
-<body class="bg-gray-50 font-sans"
-      data-require-auth="admin"
-      data-page="dashboard">
+<body class="bg-cream text-navy font-sans"
+      data-require-auth="admin">
+  <!-- Navbar mount -->
+  <div id="navMount"><div class="h-16 bg-navy/90"></div></div>
 
-  <main class="max-w-7xl mx-auto p-6 space-y-6">
+  <main class="max-w-5xl mx-auto p-6 space-y-6">
     <!-- Header -->
-    <header class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p class="text-sm text-muted mt-1">Overview of member capital and recent activity.</p>
-      </div>
-      <div class="flex items-center gap-3">
-        <div id="whoami" class="text-sm text-gray-600">Loading…</div>
-        <a href="/pages/admin.html" class="text-sm underline hover:no-underline">Invite Member</a>
+    <header class="bg-white border border-line rounded-2xl p-6">
+      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 class="text-3xl font-serif tracking-tight">Admin Dashboard</h1>
+          <p class="text-sm text-gray-600 mt-1">Overview of member capital and recent activity.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div id="whoami" class="text-sm text-gray-600">Loading…</div>
+          <a href="/pages/admin.html"
+             class="rounded-md border border-line bg-white px-3 py-2 text-sm hover:bg-gray-50">Invite Member</a>
+        </div>
       </div>
     </header>
 
     <!-- Metric Cards -->
     <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+      <div class="bg-white border border-line rounded-2xl p-5 shadow-soft">
         <div class="text-xs uppercase text-gray-500">Grand Total</div>
         <div id="cardTotal" class="mt-1 text-2xl font-bold tabular-nums">—</div>
         <div class="text-xs text-gray-400 mt-1">All members’ balances combined</div>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+      <div class="bg-white border border-line rounded-2xl p-5 shadow-soft">
         <div class="text-xs uppercase text-gray-500">Members</div>
         <div id="cardMembers" class="mt-1 text-2xl font-bold tabular-nums">—</div>
         <div class="text-xs text-gray-400 mt-1">Active member records</div>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+      <div class="bg-white border border-line rounded-2xl p-5 shadow-soft">
         <div class="text-xs uppercase text-gray-500">Contributed (30d)</div>
         <div id="card30d" class="mt-1 text-2xl font-bold tabular-nums">—</div>
         <div class="text-xs text-gray-400 mt-1">Sum of positive ledger entries</div>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+      <div class="bg-white border border-line rounded-2xl p-5 shadow-soft">
         <div class="text-xs uppercase text-gray-500">Last Update</div>
-        <div id="cardUpdated" class="mt-1 text-2xl font-bold tabular-nums text-gray-900">—</div>
+        <div id="cardUpdated" class="mt-1 text-2xl font-bold tabular-nums">—</div>
         <div class="text-xs text-gray-400 mt-1">As of latest fetch</div>
       </div>
     </section>
 
     <!-- Distribution + Legend -->
-    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+    <section class="bg-white border border-line rounded-2xl p-6 shadow-soft">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-lg font-semibold">Capital Distribution</h2>
         <div class="flex gap-2">
-          <button id="refresh"
-                  class="px-3 py-2 rounded-md bg-gray-100 text-sm hover:bg-gray-200">Refresh</button>
-          <button id="exportCsv"
-                  class="px-3 py-2 rounded-md bg-gray-100 text-sm hover:bg-gray-200">Export CSV</button>
+          <button id="refresh" class="px-3 py-2 rounded-md bg-gray-100 text-sm hover:bg-gray-200">Refresh</button>
+          <button id="exportCsv" class="px-3 py-2 rounded-md bg-gray-100 text-sm hover:bg-gray-200">Export CSV</button>
         </div>
       </div>
       <div class="grid gap-6 lg:grid-cols-3">
@@ -89,17 +97,17 @@
     <!-- Tables -->
     <section class="grid gap-6 lg:grid-cols-2">
       <!-- Balances table -->
-      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+      <div class="bg-white border border-line rounded-2xl p-6 shadow-soft">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-lg font-semibold">All Members – Balances</h2>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto border border-line rounded-lg">
           <table class="w-full text-sm border-collapse">
             <thead class="bg-gray-100">
               <tr>
-                <th class="text-left px-2 py-1 font-medium">Member</th>
-                <th class="text-left px-2 py-1 font-medium">Balance</th>
-                <th class="text-left px-2 py-1 font-medium">Member ID</th>
+                <th class="text-left px-3 py-2 font-medium">Member</th>
+                <th class="text-left px-3 py-2 font-medium">Balance</th>
+                <th class="text-left px-3 py-2 font-medium">Member ID</th>
               </tr>
             </thead>
             <tbody id="balancesBody"></tbody>
@@ -108,18 +116,18 @@
       </div>
 
       <!-- Recent ledger -->
-      <div class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+      <div class="bg-white border border-line rounded-2xl p-6 shadow-soft">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-lg font-semibold">Recent Ledger (All)</h2>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto border border-line rounded-lg">
           <table class="w-full text-sm border-collapse">
             <thead class="bg-gray-100">
               <tr>
-                <th class="text-left px-2 py-1 font-medium">Date</th>
-                <th class="text-left px-2 py-1 font-medium">Member</th>
-                <th class="text-left px-2 py-1 font-medium">Amount</th>
-                <th class="text-left px-2 py-1 font-medium">Note</th>
+                <th class="text-left px-3 py-2 font-medium">Date</th>
+                <th class="text-left px-3 py-2 font-medium">Member</th>
+                <th class="text-left px-3 py-2 font-medium">Amount</th>
+                <th class="text-left px-3 py-2 font-medium">Note</th>
               </tr>
             </thead>
             <tbody id="recentBody"></tbody>
@@ -129,13 +137,15 @@
     </section>
 
     <!-- Debug (collapsible) -->
-    <details class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+    <details class="bg-white border border-line rounded-2xl p-6 shadow-soft">
       <summary class="cursor-pointer text-sm text-gray-600">Debug</summary>
       <pre id="debug" class="text-xs bg-gray-900 text-gray-100 p-3 rounded-md overflow-auto mt-3">waiting…</pre>
     </details>
   </main>
 
-  <!-- Bootstrap: enforces admin auth and loads /js/pages/dashboard.js -->
-  <script type="module" src="/js/shared/bootstrap.js?v=2025-09-01"></script>
+  <!-- Scripts -->
+  <script type="module" src="/js/page_inserts/navbar.js"></script>
+  <script type="module" src="/js/shared/bootstrap.js"></script>
+  <script type="module" src="/js/pages/dashboard.js"></script>
 </body>
 </html>

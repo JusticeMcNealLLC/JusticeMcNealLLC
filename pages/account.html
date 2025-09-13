@@ -5,84 +5,104 @@
   <title>LLC Portal – Account</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Tailwind (CDN for dev; switch to CLI for prod) -->
+  <!-- Tailwind (CDN for dev; switch to CLI/PostCSS for prod) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      theme: { extend: { colors: { brand: '#111', muted: '#667085' } } }
+      theme: {
+        extend: {
+          boxShadow: { soft: '0 10px 25px -10px rgba(2,6,23,.15)' },
+          colors: {
+            navy:  '#1f2d4f',
+            cream: '#f6efe6',
+            coral: '#e26b4a',
+            line:  '#e5e7eb'
+          }
+        }
+      }
     };
   </script>
 
   <!-- Favicon -->
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23111'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-family='Arial' font-size='36' fill='white'%3EL%3C/text%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231f2d4f'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-family='Arial' font-size='36' fill='white'%3EJ%3C/text%3E%3C/svg%3E">
+
+  <style>
+    .skel{animation:shimmer 1.25s linear infinite;background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 37%,#e2e8f0 63%);background-size:400% 100%;border-radius:.5rem}
+    @keyframes shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+  </style>
 </head>
 
-<body class="bg-gray-50 font-sans" data-require-auth="member">
+<body class="bg-cream text-navy font-sans" data-require-auth="member">
   <!-- NAVBAR (injected) -->
-  <div id="navMount"><div class="h-16 bg-gray-200 animate-pulse"></div></div>
+  <div id="navMount"><div class="h-16 bg-navy/90"></div></div>
 
   <main class="max-w-5xl mx-auto p-6 space-y-6">
-    <!-- Stripe return status banner -->
+    <!-- Stripe return status banner (kept; JS toggles) -->
     <div id="statusBanner" class="hidden rounded-md border px-4 py-3 text-sm"></div>
 
     <!-- Header -->
-    <header class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h1 class="text-2xl font-bold tracking-tight">Your Account</h1>
-        <p class="text-sm text-gray-600">
-          Signed in as <span id="whoami" class="font-medium text-gray-900">Loading…</span>
-        </p>
-      </div>
-      <div class="flex gap-2">
-        <a href="/pages/contribute.html" class="rounded-md bg-black px-3 py-2 text-sm text-white hover:bg-gray-800">Change Contribution</a>
-        <button id="btnSignOut"
-                class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-100">
-          Sign out
-        </button>
+    <header class="bg-white border border-line rounded-2xl p-6">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Your Account</h1>
+          <p class="text-sm text-gray-600">
+            Signed in as <span id="whoami" class="font-medium text-navy">Loading…</span>
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <a href="/pages/contribute.html"
+             class="rounded-md bg-navy px-3 py-2 text-sm text-white hover:bg-navy/90">Change Contribution</a>
+          <button id="btnSignOut"
+                  class="rounded-md border border-line bg-white px-3 py-2 text-sm hover:bg-gray-50">Sign out</button>
+        </div>
       </div>
     </header>
 
     <!-- Overview: skeleton -->
-    <section id="topSkeleton" class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5 animate-pulse">
+    <section id="topSkeleton" class="bg-white border border-line rounded-2xl p-6 skel">
       <div class="grid gap-4 md:grid-cols-4">
-        <div class="space-y-2"><div class="h-3 w-24 bg-gray-200 rounded"></div><div class="h-7 w-24 bg-gray-200 rounded"></div></div>
-        <div class="space-y-2"><div class="h-3 w-28 bg-gray-200 rounded"></div><div class="h-7 w-28 bg-gray-200 rounded"></div></div>
-        <div class="space-y-2"><div class="h-3 w-28 bg-gray-200 rounded"></div><div class="h-7 w-32 bg-gray-200 rounded"></div></div>
-        <div class="space-y-2"><div class="h-3 w-32 bg-gray-200 rounded"></div><div class="h-8 w-40 bg-gray-200 rounded-full"></div></div>
+        <div class="space-y-2"><div class="h-3 w-24 bg-white/60 rounded"></div><div class="h-7 w-24 bg-white/70 rounded"></div></div>
+        <div class="space-y-2"><div class="h-3 w-28 bg-white/60 rounded"></div><div class="h-7 w-28 bg-white/70 rounded"></div></div>
+        <div class="space-y-2"><div class="h-3 w-28 bg-white/60 rounded"></div><div class="h-7 w-32 bg-white/70 rounded"></div></div>
+        <div class="space-y-2"><div class="h-3 w-32 bg-white/60 rounded"></div><div class="h-8 w-40 bg-white/70 rounded-full"></div></div>
       </div>
     </section>
 
     <!-- Overview: content -->
-    <section id="topContent" class="hidden bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+    <section id="topContent" class="hidden bg-white border border-line rounded-2xl p-6 shadow-soft">
       <div class="grid gap-4 md:grid-cols-4">
         <div>
-          <div class="text-sm text-gray-500">Current Pledge</div>
+          <div class="text-sm text-gray-600">Current Pledge</div>
           <div id="currentPledge" class="text-2xl font-bold tabular-nums">$0</div>
         </div>
         <div>
-          <div class="text-sm text-gray-500">Lifetime Contributed</div>
+          <div class="text-sm text-gray-600">Lifetime Contributed</div>
           <div id="totalContributed" class="text-2xl font-bold tabular-nums">$0</div>
         </div>
         <div>
-          <div class="text-sm text-gray-500">Next Billing</div>
+          <div class="text-sm text-gray-600">Next Billing</div>
           <div id="nextBillingDate" class="text-lg font-semibold tabular-nums">—</div>
         </div>
         <div>
-          <div class="text-sm text-gray-500">Payment Method</div>
-          <div id="cardStatus" class="hidden rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-3 py-1.5 text-sm">
+          <div class="text-sm text-gray-600">Payment Method</div>
+          <div id="cardStatus"
+               class="hidden rounded-md border border-amber-200 bg-amber-50 text-amber-800 px-3 py-1.5 text-sm">
             No default card. Use Billing Portal to add one.
           </div>
-          <div id="cardSummary" class="hidden rounded-md border border-emerald-200 bg-emerald-50 text-emerald-800 px-3 py-1.5 text-sm">
+          <div id="cardSummary"
+               class="hidden rounded-md border border-emerald-200 bg-emerald-50 text-emerald-800 px-3 py-1.5 text-sm">
             <span id="cardSummaryTxt"></span>
           </div>
         </div>
       </div>
 
       <div class="mt-4 flex flex-wrap gap-3">
-        <button id="btnBillingPortal" class="rounded-md bg-gray-100 px-3 py-2 text-sm hover:bg-gray-200">
+        <button id="btnBillingPortal"
+                class="rounded-md bg-gray-100 px-3 py-2 text-sm hover:bg-gray-200">
           Manage in Billing Portal
         </button>
-        <button id="btnRefresh" class="rounded-md border px-3 py-2 text-sm hover:bg-gray-50">
+        <button id="btnRefresh"
+                class="rounded-md border border-line bg-white px-3 py-2 text-sm hover:bg-gray-50">
           Refresh
         </button>
         <span id="saveMsg" class="text-sm text-gray-500"></span>
@@ -90,50 +110,49 @@
     </section>
 
     <!-- Invoices: skeleton -->
-    <section id="recentSkeleton" class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5 animate-pulse">
+    <section id="recentSkeleton" class="bg-white border border-line rounded-2xl p-6 skel">
       <div class="flex items-center justify-between mb-4">
-        <div class="h-5 w-40 bg-gray-200 rounded"></div>
-        <div class="h-4 w-28 bg-gray-200 rounded"></div>
+        <div class="h-5 w-40 bg-white/70 rounded"></div>
+        <div class="h-4 w-28 bg-white/70 rounded"></div>
       </div>
       <div class="space-y-3">
-        <div class="h-10 bg-gray-200 rounded"></div>
-        <div class="h-10 bg-gray-200 rounded"></div>
-        <div class="h-10 bg-gray-200 rounded"></div>
+        <div class="h-10 bg-white/70 rounded"></div>
+        <div class="h-10 bg-white/70 rounded"></div>
+        <div class="h-10 bg-white/70 rounded"></div>
       </div>
-      <p class="mt-4 h-4 w-64 bg-gray-200 rounded"></p>
+      <p class="mt-4 h-4 w-64 bg-white/70 rounded"></p>
     </section>
 
     <!-- Invoices: content -->
-    <section id="recentContent" class="hidden bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5 space-y-4">
+    <section id="recentContent" class="hidden bg-white border border-line rounded-2xl p-6 space-y-4 shadow-soft">
       <div class="flex items-center justify-between">
         <h2 class="text-lg font-semibold">Recent invoices</h2>
-        <a href="/pages/history.html" class="text-sm text-gray-600 hover:text-gray-900">View full history →</a>
+        <a href="/pages/history.html" class="text-sm text-gray-600 hover:text-navy">View full history →</a>
       </div>
       <div id="recentInvoices" class="divide-y border rounded-lg bg-white"></div>
       <p class="text-xs text-gray-500">Click any row to view your hosted invoice.</p>
     </section>
 
-    <!-- Debug console -->
-    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5">
+    <!-- Debug console (optional) -->
+    <section class="bg-white border border-line rounded-2xl p-6">
       <div class="flex items-center justify-between">
         <h2 class="text-sm font-medium text-gray-700">Page Debug (local)</h2>
         <span class="text-xs text-gray-400">Only prints when APP.debug = true</span>
       </div>
       <pre id="debugLog" class="mt-3 h-48 w-full overflow-auto rounded-md bg-gray-900 p-3 text-[11px] leading-4 text-gray-100">logs will appear here…</pre>
     </section>
-
   </main>
 
-  <!-- FOOTER (injected) -->
+  <!-- FOOTER (optional insert point) -->
   <div id="footerMount"></div>
 
-  <!-- Modules -->
+  <!-- Modules (unchanged paths so your JS keeps working) -->
   <script type="module" src="/js/shared/bootstrap.js"></script>
   <script type="module" src="/js/page_inserts/navbar.js"></script>
   <script type="module" src="/js/pages/account/index.js"></script>
   <script type="module" src="/js/page_inserts/footer.js"></script>
 
-  <!-- Stripe return banner -->
+  <!-- Stripe return banner (kept) -->
   <script>
     (function () {
       const status = new URLSearchParams(location.search).get('status');

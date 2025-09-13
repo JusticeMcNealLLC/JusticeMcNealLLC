@@ -6,7 +6,8 @@ import { toast } from '/js/shared/ui.js';
 function getReturnTo() {
   const p = new URLSearchParams(location.search);
   const rt = p.get('returnTo');
-  return rt && rt.startsWith('/') && !rt.startsWith('//') ? rt : '/pages/account.html';
+  return rt && rt.startsWith('/') && !rt.startsWith('//') ? rt : '/index.html';
+
 }
 
 function redirectTo(returnTo = getReturnTo()) {

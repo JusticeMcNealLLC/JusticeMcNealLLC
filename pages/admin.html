@@ -97,6 +97,44 @@
         </div>
       </div>
     </section>
+<!-- Invite Member -->
+<!-- Invite Member -->
+<section class="bg-white border border-line rounded-2xl p-4 md:p-6">
+  <h2 class="text-lg font-semibold">Invite a member</h2>
+
+  <form id="inviteForm" class="mt-3 grid gap-3 md:grid-cols-[minmax(260px,380px)_auto_auto] items-start">
+    <label class="w-full">
+      <span class="sr-only">Email</span>
+      <input id="inviteEmail" type="email" required placeholder="name@example.com"
+             class="w-full rounded-md border border-line bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-navy" />
+    </label>
+
+    <!-- Optional admin toggle (your admin-invite function doesn’t use it; you can omit if not needed) -->
+    <label class="inline-flex items-center gap-2 text-sm">
+      <input id="inviteIsAdmin" type="checkbox" class="h-4 w-4 rounded border-line" />
+      Make admin (optional)
+    </label>
+
+    <div class="flex gap-2">
+      <button id="btnInvite"
+              class="rounded-md bg-navy px-4 py-2 text-sm text-white hover:bg-navy/90">
+        Send invite
+      </button>
+      <button id="btnInviteReset" type="button"
+              class="rounded-md border border-line bg-white px-3 py-2 text-sm hover:bg-gray-50">
+        Reset
+      </button>
+    </div>
+  </form>
+
+  <!-- Local message area for this card -->
+  <div id="inviteMsg" class="hidden mt-3 rounded-md px-3 py-2 text-sm"></div>
+
+  <p class="mt-2 text-xs text-gray-600">
+    The invitee will receive an email to set a password and sign in.
+  </p>
+</section>
+
 
     <!-- Members skeleton -->
     <section id="memberSkeleton" class="bg-white border border-line rounded-2xl p-6 animate-pulse">

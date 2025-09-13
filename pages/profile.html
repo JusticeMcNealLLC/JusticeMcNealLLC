@@ -1,76 +1,154 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-page="profile">
 <head>
   <meta charset="utf-8" />
   <title>LLC Portal – Profile</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Tailwind -->
+  <!-- Tailwind (CDN for dev; move to CLI for production) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
-      theme: { extend: { colors: { brand: '#111', muted: '#666' } } }
+      theme: {
+        extend: {
+          boxShadow: { soft: '0 10px 25px -10px rgba(2,6,23,.15)' },
+          colors: {
+            navy:  '#1f2d4f',
+            cream: '#f6efe6',
+            coral: '#e26b4a',
+            line:  '#e5e7eb'
+          }
+        }
+      }
     }
   </script>
+
+  <!-- Tiny favicon -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231f2d4f'/%3E%3Ctext x='50%25' y='56%25' text-anchor='middle' font-family='Arial' font-size='32' fill='white'%3EJM%3C/text%3E%3C/svg%3E">
 </head>
 
-<body class="bg-gray-50 font-sans"
-      data-require-auth="member"
-      data-page="profile">
+<body class="bg-cream text-navy font-sans" data-require-auth="member">
+  <!-- NAVBAR -->
+  <div id="navMount"><div class="h-16 bg-navy/90"></div></div>
 
-  <div class="max-w-2xl mx-auto p-6">
-    <header class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-bold tracking-tight">Profile</h1>
-      <a href="/pages/account.html" class="text-sm underline hover:no-underline">← Back to Account</a>
+  <main class="max-w-5xl mx-auto p-6 space-y-6">
+    <!-- Header -->
+    <header class="bg-white border border-line rounded-2xl p-5 shadow-soft">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Your Profile</h1>
+          <p class="text-sm text-slate-600">
+            Signed in as <span id="whoami" class="font-medium text-slate-900">Loading…</span>
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <a href="/index.html" class="rounded-md border border-line bg-white px-3 py-2 text-sm hover:bg-gray-50">Home</a>
+          <a href="/pages/account.html" class="rounded-md bg-navy px-3 py-2 text-sm text-white hover:bg-navy/90">Account</a>
+          <button id="signOut" class="rounded-md border border-line bg-white px-3 py-2 text-sm hover:bg-gray-50">Sign out</button>
+        </div>
+      </div>
     </header>
 
-    <!-- Account info -->
-    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5 space-y-4">
-      <div class="text-sm text-gray-500">Signed in as</div>
-      <div id="whoami" class="text-base font-medium text-gray-900">Loading…</div>
+    <!-- Grid -->
+    <section class="grid gap-6 md:grid-cols-2">
+      <!-- Personal details -->
+      <div class="bg-white border border-line rounded-2xl p-5 shadow-soft">
+        <h2 class="text-lg font-semibold mb-3">Personal details</h2>
 
-      <div class="grid gap-3 sm:grid-cols-2">
-        <label class="block">
-          <span class="text-sm text-gray-600">Full name</span>
-          <input id="fullName" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
-        </label>
-        <label class="block">
-          <span class="text-sm text-gray-600">Phone</span>
-          <input id="phone" class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
-        </label>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label class="block">
+            <span class="text-sm text-gray-600">Full name</span>
+            <input id="fullName" class="mt-1 w-full rounded-md border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy" />
+          </label>
+          <label class="block">
+            <span class="text-sm text-gray-600">Phone</span>
+            <input id="phone" class="mt-1 w-full rounded-md border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy" />
+          </label>
+        </div>
+
+        <div class="mt-3 flex gap-2">
+          <button id="saveProfile" class="rounded-md bg-navy px-4 py-2 text-sm text-white hover:bg-navy/90">Save changes</button>
+          <div id="msg" class="text-sm text-gray-500"></div>
+        </div>
       </div>
 
-      <div class="flex gap-2">
-        <button id="saveProfile" class="px-3 py-2 rounded-md bg-black text-white text-sm hover:bg-gray-800">Save</button>
-        <button id="signOut" class="px-3 py-2 rounded-md bg-gray-200 text-sm hover:bg-gray-300">Sign out</button>
+      <!-- Email address -->
+      <div class="bg-white border border-line rounded-2xl p-5 shadow-soft">
+        <h2 class="text-lg font-semibold mb-3">Email</h2>
+        <p class="text-sm text-gray-600 mb-3">Your current email is shown below. To change it, enter a new address and we’ll send a verification link.</p>
+
+        <label class="block mb-2">
+          <span class="text-xs text-gray-600">Current email</span>
+          <input id="currentEmail" disabled class="mt-1 w-full rounded-md border border-line bg-gray-50 px-3 py-2 text-sm" />
+        </label>
+
+        <label class="block">
+          <span class="text-sm text-gray-600">New email</span>
+          <input id="newEmail" type="email" placeholder="you@newdomain.com"
+                 class="mt-1 w-full rounded-md border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy" />
+        </label>
+
+        <div class="mt-3 flex gap-2">
+          <button id="btnChangeEmail" class="rounded-md bg-navy px-4 py-2 text-sm text-white hover:bg-navy/90">Request change</button>
+          <div id="emailMsg" class="text-sm text-gray-500"></div>
+        </div>
+
+        <p class="mt-2 text-xs text-gray-500">You’ll remain signed in; the new email becomes active after you confirm via the email we send.</p>
       </div>
-      <div id="msg" class="text-sm text-gray-500"></div>
+
+      <!-- Password -->
+      <div class="bg-white border border-line rounded-2xl p-5 shadow-soft">
+        <h2 class="text-lg font-semibold mb-3">Change password</h2>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label class="block">
+            <span class="text-sm text-gray-600">New password</span>
+            <input id="newPassword" type="password" autocomplete="new-password"
+                   class="mt-1 w-full rounded-md border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy" />
+          </label>
+          <label class="block">
+            <span class="text-sm text-gray-600">Confirm new password</span>
+            <input id="confirmPassword" type="password" autocomplete="new-password"
+                   class="mt-1 w-full rounded-md border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy" />
+          </label>
+        </div>
+
+        <div class="mt-3 flex gap-2">
+          <button id="updatePassword" class="rounded-md bg-navy px-4 py-2 text-sm text-white hover:bg-navy/90">Update password</button>
+          <div id="pwMsg" class="text-sm text-gray-500"></div>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">If you came from a reset link, setting a new password completes the reset.</p>
+      </div>
+
+      <!-- Extras (placeholders) -->
+      <div class="bg-white border border-line rounded-2xl p-5 shadow-soft">
+        <h2 class="text-lg font-semibold mb-3">Extras</h2>
+
+        <fieldset class="mb-4 opacity-60">
+          <legend class="text-sm font-medium text-gray-600 mb-1">Profile photo (coming soon)</legend>
+          <input type="file" disabled class="w-full rounded-md border border-line px-3 py-2 text-sm bg-gray-50" />
+        </fieldset>
+
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-sm font-medium">Push notifications</div>
+            <div class="text-xs text-gray-500">We’ll add support soon.</div>
+          </div>
+          <label class="inline-flex items-center gap-2 opacity-60">
+            <input type="checkbox" disabled class="h-4 w-4 rounded border-line text-navy focus:ring-navy" />
+            <span class="text-sm">Enable</span>
+          </label>
+        </div>
+      </div>
     </section>
+  </main>
 
-    <!-- Change password (signed-in flow) -->
-    <section class="bg-white rounded-2xl shadow-sm ring-1 ring-black/5 p-5 mt-6">
-      <h2 class="text-lg font-semibold mb-3">Change password</h2>
-      <div class="grid gap-3 sm:grid-cols-2">
-        <label class="block">
-          <span class="text-sm text-gray-600">New password</span>
-          <input id="newPassword" type="password" autocomplete="new-password"
-                 class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
-        </label>
-        <label class="block">
-          <span class="text-sm text-gray-600">Confirm new password</span>
-          <input id="confirmPassword" type="password" autocomplete="new-password"
-                 class="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black" />
-        </label>
-      </div>
-      <button id="updatePassword"
-              class="mt-3 px-3 py-2 rounded-md bg-black text-white text-sm hover:bg-gray-800">
-        Update password
-      </button>
-      <p class="text-xs text-gray-400 mt-2">This updates your Supabase Auth password. You are already signed in—no email link needed.</p>
-    </section>
-  </div>
+  <!-- FOOTER mount (optional) -->
+  <div id="footerMount"></div>
 
-  <!-- Bootstrap enforces auth and loads /js/pages/profile.js -->
-  <script type="module" src="/js/shared/bootstrap.js?v=2025-09-01"></script>
+  <!-- Scripts -->
+  <script type="module" src="/js/shared/bootstrap.js"></script>
+  <script type="module" src="/js/page_inserts/navbar.js"></script>
+  <script type="module" src="/js/pages/profile/index.js"></script>
+  <script type="module" src="/js/page_inserts/footer.js"></script>
 </body>
 </html>
