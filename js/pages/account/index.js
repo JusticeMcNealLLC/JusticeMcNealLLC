@@ -1,151 +1,202 @@
+// /js/pages/account/index.js
 import { APP } from '/js/shared/config.js';
 import * as api from '/js/shared/api.js';
 import { initToasts, toast } from '/js/shared/ui.js';
+import { statusPill } from '/js/shared/status.js';
+import { getStatusSWR } from './data.js';
 import * as st from './state.js';
 import * as accUI from './ui.js';
 
-const $ = (id) => document.getElementById(id);
-const dlog = (...args) => {
-  if (APP?.debug) {
-    console.log('[account]', ...args);
-    const pre = $('debugLog');
-    if (pre) pre.textContent += `${args.map(a => {
-      try { return typeof a === 'string' ? a : JSON.stringify(a); }
-      catch { return String(a); }
-    }).join(' ')}\n`;
+const $ = (s, r=document) => r.querySelector(s);
+
+// local paging
+const ST = { invoices: [], page: 1, per: 10, pms: [], defaultPmId: null };
+
+function ytdTotalFromInvoices(invoices = []) {
+  const year = new Date().getFullYear();
+  let cents = 0;
+  for (const i of invoices) {
+    if (!i) continue;
+    const paid = String(i.status).toLowerCase() === 'paid';
+    const y = i.created ? new Date(i.created * 1000).getFullYear() : 0;
+    if (paid && y === year) cents += (i.amount_paid ?? i.amount_due ?? 0) || 0;
   }
-};
-
-const usd0 = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-const usd0FromCents = (c) => usd0.format((Number(c) || 0) / 100);
-
-function togglePair(base, isSkeleton) {
-  const sk = $(`${base}Skeleton`);
-  const ct = $(`${base}Content`);
-  if (!sk || !ct) return;
-  if (isSkeleton) { sk.classList.remove('hidden'); ct.classList.add('hidden'); }
-  else { sk.classList.add('hidden'); ct.classList.remove('hidden'); }
+  return cents;
 }
 
-function renderOverview() {
-  $('currentPledge').textContent     = usd0FromCents(st.currentPledgeCents());
-  $('totalContributed').textContent  = usd0FromCents(st.totalContributedCents());
-  $('nextBillingDate').textContent   = st.nextBilling()
-    ? new Date(st.nextBilling() * 1000).toLocaleDateString()
-    : '—';
-
-  const warn = $('cardStatus');
-  const ok   = $('cardSummary');
-  const txt  = $('cardSummaryTxt');
-  const pm   = st.defaultCard();
-
-  if (pm) {
-    warn?.classList.add('hidden');
-    ok?.classList.remove('hidden');
-    const brand = pm.brand ? pm.brand[0].toUpperCase() + pm.brand.slice(1) : 'Card';
-    const exp = (pm.exp_month && pm.exp_year)
-      ? ` exp ${String(pm.exp_month).padStart(2,'0')}/${String(pm.exp_year).slice(-2)}`
-      : '';
-    if (txt) txt.textContent = `${brand} •••• ${pm.last4 || '••••'}${exp}`;
-  } else {
-    ok?.classList.add('hidden');
-    warn?.classList.remove('hidden');
-  }
+function formatPaymentMethod(pm) {
+  if (!pm) return '—';
+  const brand = (pm.brand || '').toUpperCase();
+  const last4 = pm.last4 ? `•••• ${pm.last4}` : '';
+  const mm = pm.exp_month ? String(pm.exp_month).padStart(2, '0') : '';
+  const yy = pm.exp_year ? String(pm.exp_year).slice(-2) : '';
+  const exp = mm && yy ? ` (${mm}/${yy})` : '';
+  return [brand, last4].filter(Boolean).join(' ') + exp;
 }
 
-function renderInvoices(invoices = []) {
-  const wrap = $('recentInvoices');
-  if (!wrap) return;
-  if (!invoices.length) {
-    wrap.innerHTML = '<div class="p-3 text-sm text-gray-600">No invoices yet.</div>';
+function nextChargeFromState() {
+  const ts = st.nextBilling?.();
+  return ts ? new Date(ts * 1000).toLocaleDateString() : '—';
+}
+
+/* ---------- Payment methods: fetch + actions ---------- */
+
+async function fetchPaymentMethodsWithFallback(status) {
+  // Prefer backend endpoint if available; else fall back to status payload
+  if (typeof api.listPaymentMethods === 'function') {
+    const res = await api.listPaymentMethods().catch(() => null);
+    const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+    return { list, defaultId: st.defaultCard?.()?.id || status?.default_payment_method_id || status?.invoice_settings?.default_payment_method || null };
+  }
+  const list = status?.payment_methods || status?.saved_payment_methods || [];
+  const defaultId = st.defaultCard?.()?.id || status?.default_payment_method_id || status?.invoice_settings?.default_payment_method || null;
+  return { list, defaultId };
+}
+
+async function setDefaultPaymentMethod(id) {
+  if (typeof api.setDefaultPaymentMethod === 'function') {
+    await api.setDefaultPaymentMethod(id);
+    toast('Default payment method updated.');
     return;
   }
-  wrap.innerHTML = invoices.map(inv => {
-    const date = inv?.created ? new Date(inv.created * 1000).toLocaleDateString() : '—';
-    const amt  = usd0FromCents(inv?.amount_paid ?? inv?.amount_due ?? 0);
-    const url  = inv?.hosted_invoice_url || inv?.invoice_pdf || '#';
-    const num  = inv?.number || inv?.id || '—';
-    const stx  = inv?.status || '—';
-    return `
-      <a class="flex items-center justify-between p-3 hover:bg-gray-50" href="${url}" target="_blank" rel="noopener">
-        <div class="flex flex-col">
-          <span class="text-sm text-gray-700">${date} · ${num}</span>
-          <span class="text-xs text-gray-500">Status: ${stx}</span>
-        </div>
-        <span class="text-sm font-medium">${amt}</span>
-      </a>`;
-  }).join('');
+  toast('Opening Billing Portal to change default…');
+  await openBillingPortal();
 }
 
-async function refresh() {
-  dlog('refresh:start');
-  togglePair('top', true);
-  togglePair('recent', true);
+async function detachPaymentMethod(id) {
+  if (typeof api.detachPaymentMethod === 'function') {
+    await api.detachPaymentMethod(id);
+    toast('Card removed.');
+    return;
+  }
+  toast('Use Billing Portal to remove cards.');
+  await openBillingPortal();
+}
+
+async function openBillingPortal() {
+  try {
+    if (typeof api.openBillingPortal === 'function') {
+      const { url } = await api.openBillingPortal();
+      if (url) { location.href = url; return; }
+    }
+  } catch {}
+  location.assign('/pages/contribute.html');
+}
+
+/* ---------- Render orchestration ---------- */
+
+function renderAll() {
+  // Summary
+  const lifetime = st.totalContributedCents?.() ?? 0;
+  const ytd      = ytdTotalFromInvoices(ST.invoices);
+  const next     = nextChargeFromState();
+  const pm       = formatPaymentMethod(st.defaultCard?.());
+
+  accUI.renderSummary({
+    lifetimeCents: lifetime,
+    ytdCents: ytd,
+    nextCharge: next,
+    paymentMethod: pm,
+  });
+
+  // Invoices
+  $('#invCount').textContent = `${ST.invoices.length} total`;
+  accUI.renderInvoices(ST.invoices.slice(0, ST.page * ST.per), {
+    total: ST.invoices.length,
+    pill: statusPill,
+  });
+
+  // Payment methods
+  accUI.renderPaymentMethods(ST.pms, ST.defaultPmId);
+}
+
+async function refresh(forceNetwork = false) {
+  accUI.showSkeletons();
+  accUI.showPmSkeletons();
+  accUI.setBusy(true);
 
   try {
-    const me = await api.whoami().catch(() => null);
-    if (me?.email) $('whoami').textContent = me.email;
-    dlog('whoami', me?.email || '(unknown)');
+    // Who am I (email in header)
+    const me = await api.whoami?.().catch(() => null);
+    accUI.setSignedInAs(me?.email || me?.full_name || '—');
 
-    const status = await api.loadContributionStatus().catch(e => {
-      dlog('status:error', e?.message);
-      return null;
+    // Status (server is source of truth for totals)
+    const status = await getStatusSWR(async () => {
+      return forceNetwork
+        ? await api.loadContributionStatus({ cache: 'no-store' })
+        : await api.loadContributionStatus();
     });
 
-    st.hydrateFromStatus(status || {});
-    renderOverview();
+    st.hydrateFromStatus?.(status || {});
 
-    const { invoices = [] } = await api.getRecentInvoices().catch(e => {
-      dlog('invoices:error', e?.message);
-      return {};
-    });
-    renderInvoices(invoices);
+    // Invoices
+    const invResp = await api.getRecentInvoices?.().catch(() => ({}));
+    ST.invoices = Array.isArray(invResp?.invoices) ? invResp.invoices : [];
+    ST.page = 1;
+
+    // Payment methods
+    const { list, defaultId } = await fetchPaymentMethodsWithFallback(status || {});
+    ST.pms = Array.isArray(list) ? list : [];
+    ST.defaultPmId = defaultId || null;
+
+    // Debug (admin only)
+    const isAdmin = !!st.member?.()?.is_admin;
+    if (typeof accUI.toggleDebug === 'function') {
+      accUI.toggleDebug(!!(APP?.debug && isAdmin), { status, invoicesCount: ST.invoices.length, pmCount: ST.pms.length });
+    }
+
+    renderAll();
   } catch (e) {
-    dlog('refresh:error', e?.message);
-    toast(e?.message || 'Error loading account');
+    initToasts?.();
+    toast?.(e?.message || 'Failed to load account', { kind: 'error' });
   } finally {
-    togglePair('top', false);
-    togglePair('recent', false);
-    dlog('refresh:done');
+    accUI.setBusy(false);
   }
 }
 
-function bindActions() {
-  $('btnRefresh')?.addEventListener('click', refresh);
+/* ---------- Events ---------- */
 
-  $('btnBillingPortal')?.addEventListener('click', async () => {
+function wire() {
+  $('#btnRefresh')?.addEventListener('click', () => refresh(true));
+  $('#btnBillingPortal')?.addEventListener('click', openBillingPortal);
+  $('#pmManage')?.addEventListener('click', openBillingPortal);
+
+  // Payment methods actions (delegate)
+  $('#pmList')?.addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-action]');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
+    if (!id || !action) return;
+
+    accUI.setBusy(true);
     try {
-      accUI.setBusy(true);
-      dlog('portal:clicked');
-      const { url } = await api.openBillingPortal();
-      if (url) {
-        dlog('portal:redirect', url);
-        location.href = url;
-      } else {
-        toast('Could not open billing portal.');
-      }
-    } catch (e) {
-      dlog('portal:error', e?.message);
-      toast(e?.message || 'Could not open billing portal.');
+      if (action === 'make-default') await setDefaultPaymentMethod(id);
+      if (action === 'detach')       await detachPaymentMethod(id);
+      await refresh(true);
     } finally {
       accUI.setBusy(false);
     }
   });
 
-  $('btnSignOut')?.addEventListener('click', async () => {
-    try {
-      await api.supabase.auth.signOut();
-    } finally {
-      location.href = '/'; // or your sign-in page
-    }
+  $('#btnMore')?.addEventListener('click', () => {
+    ST.page += 1;
+    accUI.renderInvoices(ST.invoices.slice(0, ST.page * ST.per), {
+      total: ST.invoices.length,
+      pill: statusPill,
+    });
   });
 }
 
 function boot() {
-  initToasts();
-  accUI.init();
-  bindActions();
-  refresh();
+  if (window.__acctBooted) return;
+  window.__acctBooted = true;
+
+  initToasts?.();
+  wire();
+  refresh(false);
 }
 
-document.addEventListener('DOMContentLoaded', boot);
+document.readyState === 'loading'
+  ? document.addEventListener('DOMContentLoaded', boot, { once: true })
+  : boot();

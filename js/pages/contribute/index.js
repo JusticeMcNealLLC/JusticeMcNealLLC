@@ -1,250 +1,109 @@
 // /js/pages/contribute/index.js
-import { APP } from '/js/shared/config.js';
-import * as api from '/js/shared/api.js';
-import * as sk from '/js/shared/skeletons.js';
-import * as ui from './ui.js';
-import * as st from './state.js';
+// Orchestrates the Contribute page by composing small modules.
 
-/* ───────────── Debug logger ───────────── */
-const dlog = (...args) => { if (APP?.debug) console.log('[contribute]', ...args); };
+import { loadContributionStatus } from '/js/shared/api.js';
 
-/* (Optional) Patch fetch logging in dev only */
-if (APP?.debug && typeof window !== 'undefined' && !window.__fetchPatched) {
-  window.__fetchPatched = true;
-  const origFetch = window.fetch.bind(window);
-  window.fetch = async (...args) => {
-    try {
-      console.log('[fetch ►]', args[0], args[1]?.method || 'GET');
-      const res = await origFetch(...args);
-      console.log('[fetch ◄]', res.status, res.url);
-      return res;
-    } catch (err) {
-      console.log('[fetch ✖]', args[0], err?.message || err);
-      throw err;
-    }
-  };
+import { $, show } from './dom.js';
+import { updateWhoamiFromStatus } from './identity.js';
+import { renderMetrics, setCurrentPledge } from './metrics.js';
+import { renderProjection } from './projection.js';
+import { bindAmountValidation } from './controls.js';
+import { bindCTAs } from './actions.js';
+import { fetchActivity, renderActivity } from './activity.js';
+
+/** Hide any lingering skeletons (catches common classes & data hooks). */
+function hideAllSkeletons() {
+  const sels =
+    '#topSkeleton,#activitySkeleton,#recentSkeleton,' +
+    '[data-skeleton],.skeleton,.skeleton-card,.animate-pulse';
+  document.querySelectorAll(sels).forEach(el => el.classList.add('hidden'));
 }
 
-const $ = (id) => document.getElementById(id);
-const setText = (id, v) => { const el = $(id); if (el) el.textContent = v; };
-
-const usd0 = new Intl.NumberFormat('en-US', {
-  style: 'currency', currency: 'USD', maximumFractionDigits: 0
-});
-const usd0FromCents = (cents) => usd0.format((Number(cents) || 0) / 100);
-
-function renderInvoices(invoices = []) {
-  const wrap = $('recentInvoices');
-  if (!wrap) return;
-  if (!invoices.length) {
-    wrap.innerHTML = '<div class="p-3 text-sm text-gray-600">No invoices yet.</div>';
-    dlog('renderInvoices: empty');
-    return;
-  }
-  wrap.innerHTML = invoices.map(inv => {
-    const date = inv?.created ? new Date(inv.created * 1000).toLocaleDateString() : '—';
-    const amt = usd0.format(((inv?.amount_paid ?? inv?.amount_due ?? 0) / 100));
-    const url = inv?.hosted_invoice_url || inv?.invoice_pdf || '#';
-    const num = inv?.number || inv?.id || '—';
-    const status = inv?.status || '—';
-    return `
-      <a class="flex items-center justify-between p-3 hover:bg-gray-50" href="${url}" target="_blank" rel="noopener">
-        <div class="flex flex-col">
-          <span class="text-sm text-gray-700">${date} · ${num}</span>
-          <span class="text-xs text-gray-500">Status: ${status}</span>
-        </div>
-        <span class="text-sm font-medium">${amt}</span>
-      </a>`;
-  }).join('');
-  dlog('renderInvoices:', invoices.length);
+// add near top
+function setCtaLabelFromStatus(status) {
+  const btn = document.querySelector('#btnOpenConfirm');
+  if (!btn) return;
+  // active if there’s a live subscription; otherwise “start”
+  const subId = status?.member?.stripe_subscription_id || null;
+  const active = (status?.member?.membership_status === 'active') && !!subId;
+  btn.textContent = active ? 'Update contribution' : 'Start contribution';
+  btn.dataset.mode = active ? 'update' : 'start';
 }
 
 async function refresh() {
-  const t0 = performance.now();
-  dlog('refresh:start');
-  sk.togglePair('top', true);
-  sk.togglePair('recent', true);
+  // Skeletons on (support old IDs during transition)
+  const skTop = $('#topSkeleton');
+  const skAct = $('#activitySkeleton') || $('#recentSkeleton');
+  const ctTop = $('#topContent');
+  const ctAct = $('#activityContent') || $('#recentContent');
+
+  show(skTop, true);
+  show(skAct, true);
+  show(ctTop, false);
+  show(ctAct, false);
 
   try {
-    // whoami
-    const me = await api.whoami().catch(() => null);
-    if (me?.email) {
-      setText('whoami', me.email);
-      dlog('whoami:', me.email);
-    } else {
-      dlog('whoami: not signed in?');
+    // 1) Load status and identity banner
+    const st = await loadContributionStatus();
+    setCtaLabelFromStatus(st);
+    await updateWhoamiFromStatus(st);
+
+    const pledgeCents =
+      st.current_cents ?? st.member?.monthly_contribution_cents ?? 0;
+
+    const totalCents =
+      st.total_cents ?? st.total_contributed_cents ?? 0;
+
+    const nextUnix =
+      st.next_billing_unix ??
+      st.next_billing ??
+      (st.next_billing_iso
+        ? Math.floor(new Date(st.next_billing_iso).getTime() / 1000)
+        : null);
+
+    // Keep internal state + update top metrics
+    setCurrentPledge(pledgeCents);
+    renderMetrics({ pledgeCents, totalCents, nextBillingUnix: nextUnix });
+
+    // 2) Seed amount input if empty, then recompute projection
+    const input = $('#pledgeInput');
+    if (input && (!input.value || Number(input.value) <= 0)) {
+      input.value = String(Math.max(0, Math.round(pledgeCents / 100)));
+      input.dispatchEvent(new Event('input', { bubbles: true }));
     }
+    renderProjection();
 
-    // status
-    const status = await api.loadContributionStatus().catch((e) => {
-      dlog('status: error', e?.message);
-      return null;
-    });
-
-    const cents = status?.member?.monthly_contribution_cents ?? 0;
-    st.setMember(status?.member ?? null);
-    st.setCurrentPledgeCents(cents);
-    st.setTotalContributedCents(status?.total_contributed_cents ?? 0);
-    st.setNextBilling(status?.next_billing_date ?? null);
-    st.setDefaultCard(status?.default_payment_method ?? null);
-
-    setText('currentPledge', usd0FromCents(st.currentPledgeCents()));
-    setText('totalContributed', usd0FromCents(st.totalContributedCents()));
-    setText('nextBillingDate', st.nextBilling()
-      ? new Date(st.nextBilling() * 1000).toLocaleDateString()
-      : '—');
-
-    dlog('status:', {
-      current_cents: st.currentPledgeCents(),
-      total_cents: st.totalContributedCents(),
-      next_billing: st.nextBilling(),
-      has_default_card: !!st.defaultCard(),
-    });
-
-    // card chip vs warning
-    const warn = $('cardStatus');
-    const ok = $('cardSummary');
-    const txt = $('cardSummaryTxt');
-    const pm = st.defaultCard();
-    if (pm) {
-      warn?.classList.add('hidden');
-      ok?.classList.remove('hidden');
-      const brand = pm.brand ? pm.brand[0].toUpperCase() + pm.brand.slice(1) : 'Card';
-      const exp = (pm.exp_month && pm.exp_year)
-        ? ` exp ${String(pm.exp_month).padStart(2, '0')}/${String(pm.exp_year).slice(-2)}`
-        : '';
-      if (txt) txt.textContent = `${brand} •••• ${pm.last4 || '••••'}${exp}`;
-    } else {
-      ok?.classList.add('hidden');
-      warn?.classList.remove('hidden');
-    }
-
-    // prefill pledge UI (nearest $10, clamp 50..2000)
-    const dollars = Math.max(50, Math.min(2000, Math.round((cents / 100) / 10) * 10)) || 50;
-    ui.setPledge(dollars);
-    ui.recomputeProjection();
-    dlog('ui:setPledge', dollars);
-
-    // recent invoices
-    const { invoices = [] } = await api.getRecentInvoices().catch((e) => {
-      dlog('recent invoices: error', e?.message);
-      return {};
-    });
-    renderInvoices(invoices);
+    // 3) Unified activity feed
+    const items = await fetchActivity();
+    renderActivity(items);
   } catch (e) {
-    console.error('[contribute] refresh error', e);
-    dlog('refresh:error', e?.message);
+    console.error('[contribute] refresh failed', e);
+    alert(e?.message || 'Could not load contribution info.');
   } finally {
-    sk.togglePair('top', false);
-    sk.togglePair('recent', false);
-    dlog('refresh:done in', Math.round(performance.now() - t0), 'ms');
+    // Skeletons off (be extra-safe and nuke any loaders that slipped through)
+    hideAllSkeletons();
+    show(skTop, false);
+    show(skAct, false);
+    show(ctTop, true);
+    show(ctAct, true);
   }
 }
 
-function bindActions() {
-  // Ensure base UI hooks exist (modal, explainer, inputs, etc.)
-  ui.init();
-  ui.bindInputs?.();
-  ui.bindPresets?.();
-  ui.bindProjection?.();
-  dlog('bindActions: ui initialized');
+export async function boot(force = false) {
+  if (window.__contribBooted && !force) return;
+  window.__contribBooted = true;
 
-  const openBtn = $('btnOpenConfirm');
-  const cancelBtn = $('btnCancelConfirm');
-  const portalBtn = $('btnBillingPortal');
+  // Bind inputs & buttons first so validation/CTAs are live
+  bindAmountValidation();
+  bindCTAs(refresh);
 
-  dlog('bindActions: elements', {
-    hasOpenBtn: !!openBtn,
-    hasCancelBtn: !!cancelBtn,
-    hasPortalBtn: !!portalBtn
-  });
-
-  // When user clicks Update → open confirm
-  openBtn?.addEventListener('click', () => {
-    const amt = ui.getPledge();
-    dlog('update:clicked', {
-      pledge_ui_dollars: amt,
-      current_cents: st.currentPledgeCents(),
-      has_default_card: !!st.defaultCard(),
-      next_billing: st.nextBilling()
-    });
-    ui.showConfirm({
-      newAmount: amt,
-      currentAmount: Math.round(st.currentPledgeCents() / 100),
-      nextBilling: st.nextBilling()
-    });
-  });
-
-  // Optional: log cancel clicks on the modal
-  cancelBtn?.addEventListener('click', () => dlog('update:confirm_cancel'));
-
-  // Confirm modal → call edge function to update contribution
-  ui.onConfirm(async () => {
-    const newAmount = ui.getPledge(); // dollars
-    dlog('update:confirm_submit', { newAmount });
-
-    const t0 = performance.now();
-    try {
-      ui.setBusy(true);
-      const res = await api.updateContribution({ new_monthly_dollars: newAmount });
-      const ms = Math.round(performance.now() - t0);
-      dlog('update:response', { res, ms });
-
-      if (res?.billing_portal_url) {
-        dlog('update:redirect -> billing_portal_url', res.billing_portal_url);
-        location.href = res.billing_portal_url;
-        return;
-      }
-      if (res?.checkout_url) {
-        dlog('update:redirect -> checkout_url', res.checkout_url);
-        location.href = res.checkout_url;
-        return;
-      }
-
-      dlog('update:acknowledged_no_redirect');
-      ui.toast('Contribution updated. Takes effect on next billing.');
-      await refresh();
-    } catch (e) {
-      console.error('[contribute] update error', e);
-      dlog('update:error', { message: e?.message, stack: e?.stack });
-      ui.toast(e?.message || 'Update failed.');
-    } finally {
-      ui.setBusy(false);
-      dlog('update:flow_finished');
-    }
-  });
-
-  // Manage in Billing Portal
-  portalBtn?.addEventListener('click', async (ev) => {
-    ev.preventDefault();
-    const t0 = performance.now();
-    dlog('portal:clicked');
-    try {
-      ui.setBusy(true);
-      const { url } = await api.openBillingPortal();
-      dlog('portal:response', { url, ms: Math.round(performance.now() - t0) });
-      if (url) {
-        dlog('portal:redirect', url);
-        location.href = url;
-      } else {
-        ui.toast('Could not open billing portal.');
-      }
-    } catch (e) {
-      console.error('[contribute] portal error', e);
-      dlog('portal:error', e?.message);
-      ui.toast(e?.message || 'Could not open billing portal.');
-    } finally {
-      ui.setBusy(false);
-    }
-  });
-}
-
-async function boot() {
-  dlog('boot');
-  // tiny debug handle for console testing
-  window.__dbg = Object.assign(window.__dbg || {}, { api, st, ui });
-  bindActions();
+  // First render
   await refresh();
 }
 
-document.addEventListener('DOMContentLoaded', boot);
+// Auto-boot
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', () => boot());
+} else {
+  boot();
+}

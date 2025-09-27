@@ -1,145 +1,109 @@
 // /js/pages/contribute/ui.js
-import { clampPledge, fmtUSD0 } from './validate.js';
-import * as skel from '/js/shared/skeletons.js';
+// UI helpers for Contribute page
 
-const $ = (s) => document.querySelector(s);
+import { clampPledge, fmtUSD0, wirePledgeValidation } from './validate.js';
 
-/* ───────────────────────── Init ───────────────────────── */
-export function init() {
-  bindModalButtons();
-  bindExplainerToggle();
-}
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 
-/* ─────────────────── Skeleton toggles ─────────────────── */
+/* Skeleton toggles */
 export function showStatusSkeleton(show) {
-  const sk = document.getElementById('skeletonStatus');
-  const real = document.getElementById('statusContent');
+  const sk = $('#topSkeleton'), real = $('#topContent');
   if (!sk || !real) return;
   if (show) { sk.classList.remove('hidden'); real.classList.add('hidden'); }
-  else { sk.classList.add('hidden'); real.classList.remove('hidden'); }
+  else      { sk.classList.add('hidden');    real.classList.remove('hidden'); }
 }
-
 export function showInvoicesSkeleton(show) {
-  const sk = document.getElementById('skeletonInvoices');
-  const real = document.getElementById('recentInvoices');
+  const sk = $('#recentSkeleton'), real = $('#recentContent');
   if (!sk || !real) return;
-  if (show) {
-    sk.classList.remove('hidden');
-    real.classList.add('hidden');
-    skel.renderListSkeleton(sk, 3);
-  } else {
-    sk.classList.add('hidden');
-    real.classList.remove('hidden');
-    skel.clearListSkeleton(sk);
-  }
+  if (show) { sk.classList.remove('hidden'); real.classList.add('hidden'); }
+  else      { sk.classList.add('hidden');    real.classList.remove('hidden'); }
 }
 
-/* ───────────────────────── Busy ───────────────────────── */
+/* Busy state */
 export function setBusy(isBusy) {
-  skel.setBusy(['#btnOpenConfirm', '#btnConfirmUpdate', '#btnBillingPortal'], isBusy);
-}
-
-/* ───────────────────── Explainer toggle ───────────────── */
-export function bindExplainerToggle() {
-  const btn = $('#explainerToggle');
-  const panel = $('#explainerPanel');
-  const chev = $('#explainerChevron');
-  if (!btn || !panel) return;
-  btn.addEventListener('click', () => {
-    const isHidden = panel.classList.toggle('hidden');
-    const open = !isHidden;
-    btn.setAttribute('aria-expanded', String(open));
-    if (chev) chev.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
-    if (open) panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  ['#btnOpenConfirm','#btnConfirmUpdate','#btnBillingPortal'].forEach(sel => {
+    const el=$(sel); if(!el) return;
+    el.toggleAttribute('disabled', !!isBusy);
+    el.classList.toggle('opacity-60', !!isBusy);
+    el.classList.toggle('pointer-events-none', !!isBusy);
   });
 }
 
-/* ─────────────── Inputs, presets & styling ────────────── */
-function applyPresetStyles(activeValue) {
-  document.querySelectorAll('.preset').forEach(btn => {
-    const val = Number(btn.dataset.preset);
-    const isActive = val === activeValue;
-    btn.className =
-      'preset px-3 py-1.5 rounded-md text-sm transition ' +
-      (isActive
-        ? 'bg-indigo-600 text-white shadow hover:bg-indigo-500'
-        : 'bg-gray-100 text-gray-800 hover:bg-gray-200');
-  });
-}
-
-/** Right pill in amber band (preview: 10% of pledge, e.g. $200 → $20) */
-export function updatePledgeAlt(dollars) {
-  const alt = document.getElementById('pledgeAlt');
-  if (!alt) return;
-  const n = Math.max(0, Math.round(Number(dollars || 0) / 10));
-  alt.textContent = `$${n}/mo`;
-}
-
+/* Amount + presets + slider */
 export function bindInputs() {
-  const slider = $('#pledgeSlider');
   const input  = $('#pledgeInput');
+  // Support multiple possible ids/attributes for the amount slider
+  const slider = $('#pledgeSlider') || $('#pledgeRange') || document.querySelector('[data-role="pledge-slider"]');
+  const btn    = $('#btnOpenConfirm');
+
+  try { wirePledgeValidation({ input, button: btn, min: 50, max: 2000 }); } catch {}
 
   const syncFromSlider = () => {
-    if (input && slider) input.value = slider.value;
-    updatePledgeAlt(Number(slider?.value || 0));      // ← keep right pill in sync
-    recomputeProjection();
-    applyPresetStyles(Number(slider?.value || 0));
-  };
-
-  const syncFromInput = () => {
     if (!input || !slider) return;
-    const clamped = clampPledge(input.value);
-    input.value = clamped || 50;
-    slider.value = input.value;
-    updatePledgeAlt(Number(input.value));             // ← keep right pill in sync
+    input.value = String(slider.value);
     recomputeProjection();
-    applyPresetStyles(Number(input.value));
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  const syncFromInput = () => {
+    if (!input) return;
+    const v = clampPledge(input.value) || 50;
+    input.value = String(v);
+    if (slider) slider.value = String(v);
+    recomputeProjection();
+    input.dispatchEvent(new Event('input', { bubbles: true }));
   };
 
   slider?.addEventListener('input', syncFromSlider);
-
-  // live preview while typing; clamp on change
-  input?.addEventListener('input', () => updatePledgeAlt(Number(input.value)));
   input?.addEventListener('change', syncFromInput);
-}
+  input?.addEventListener('input', () => { /* keep live */ });
 
-export function bindPresets() {
-  document.querySelectorAll('.preset').forEach(btn => {
+  // Presets: support .preset, [data-preset], and [data-amt]
+  document.querySelectorAll('.preset, [data-preset], [data-amt]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const v = Number(btn.dataset.preset);
-      setPledge(v);            // setPledge will update the right pill
-      recomputeProjection();
+      const raw = btn.dataset.preset ?? btn.dataset.amt;
+      const v = clampPledge(raw) || 50;
+      setPledge(v);
+      input?.dispatchEvent(new Event('input', { bubbles: true }));
     });
   });
 }
 
 export function setPledge(v) {
-  const s = $('#pledgeSlider');
   const i = $('#pledgeInput');
-  if (s) s.value = String(v);
+  const s = $('#pledgeSlider') || $('#pledgeRange') || document.querySelector('[data-role="pledge-slider"]');
   if (i) i.value = String(v);
-  updatePledgeAlt(Number(v));   // ← ensure amber right pill updates here too
-  applyPresetStyles(Number(v));
+  if (s) s.value = String(v);
+  recomputeProjection();
 }
 
 export function getPledge() {
   return Number($('#pledgeInput')?.value || 0);
 }
 
-/* ─────────────────────── Confirm modal ─────────────────── */
-let onConfirmCb = null;
-let onOpenCb = null;
+/* Projection (simple total only) */
+export function bindProjection() {
+  $('#horizon')?.addEventListener('change', recomputeProjection);
+}
+export function recomputeProjection() {
+  const months  = Number($('#horizon')?.value || 6);
+  const dollars = clampPledge(getPledge()) || 0;
+  const mEl = $('#projMonths'); if (mEl) mEl.textContent = String(months);
+  const rEl = $('#projRate');   if (rEl) rEl.textContent = fmtUSD0(dollars) + '/mo';
+  const tEl = $('#projTotal');  if (tEl) tEl.textContent = fmtUSD0(dollars * months);
+}
 
-export function onOpenConfirm(cb) { onOpenCb = cb; }
-export function onConfirm(cb)     { onConfirmCb = cb; }
+/* Modal plumbing */
+let onOpenCb = null, onConfirmCb = null;
+export function onOpenConfirm(cb){ onOpenCb = cb; }
+export function onConfirm(cb){ onConfirmCb = cb; }
 
 export function showConfirm({ newAmount, currentAmount, nextBilling }) {
   const lines = [
     `<div><strong>New amount:</strong> ${fmtUSD0(newAmount)}/mo</div>`,
-    Number.isFinite(currentAmount) && currentAmount > 0
-      ? `<div><strong>Current amount:</strong> ${fmtUSD0(currentAmount)}/mo</div>` : '',
-    `<div><strong>Effective date:</strong> Next billing date${nextBilling ? ` (${new Date(nextBilling * 1000).toLocaleDateString()})` : ''}.</div>`,
-    `<div class="text-gray-600">Your default card on file will be used. No mid-cycle charges.</div>`
+    Number.isFinite(currentAmount) && currentAmount > 0 ? `<div><strong>Current amount:</strong> ${fmtUSD0(currentAmount)}/mo</div>` : '',
+    `<div><strong>Effective date:</strong> ${nextBilling ? new Date(nextBilling*1000).toLocaleDateString() : 'Next billing date'}.</div>`,
+    `<div class="text-gray-600">Your default card will be charged on that date.</div>`
   ].filter(Boolean).join('');
   const body = $('#confirmBody'); if (body) body.innerHTML = lines;
   $('#confirmModal')?.classList.remove('hidden');
@@ -148,33 +112,16 @@ export function showConfirm({ newAmount, currentAmount, nextBilling }) {
 export function bindModalButtons() {
   $('#btnOpenConfirm')?.addEventListener('click', () => onOpenCb && onOpenCb());
   $('#btnCancelConfirm')?.addEventListener('click', () => $('#confirmModal')?.classList.add('hidden'));
-  $('#btnConfirmUpdate')?.addEventListener('click', async () => {
-    $('#confirmModal')?.classList.add('hidden');
-    if (onConfirmCb) await onConfirmCb();
+  $('#btnConfirmUpdate')?.addEventListener('click', async () => { 
+    $('#confirmModal')?.classList.add('hidden'); 
+    if (onConfirmCb) await onConfirmCb(); 
   });
 }
 
-/* ─────────────────────── Projection ────────────────────── */
-export function bindProjection() {
-  $('#horizon')?.addEventListener('change', recomputeProjection);
-}
-
-export function recomputeProjection() {
-  const months = Number($('#horizon')?.value || 6);
-  const dollars = clampPledge(getPledge()) || 0;
-  const balance = dollars * months;
-  const ltv = 0.60;
-  const power = balance * ltv;
-
-  const b = $('#projBalance'); if (b) b.textContent = fmtUSD0(balance);
-  const p = $('#projPower');   if (p) p.textContent = fmtUSD0(power);
-  const l = $('#projLTV');     if (l) l.textContent = `${Math.round(ltv * 100)}%`;
-}
-
-/* ─────────────────────── UX helpers ────────────────────── */
+/* UX helpers */
 export function toast(msg) {
   const el = $('#saveMsg');
-  if (!el) return alert(msg);
+  if (!el) return;
   el.textContent = msg;
   setTimeout(() => (el.textContent = ''), 5000);
 }
