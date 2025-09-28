@@ -18,6 +18,7 @@ export function getSb() {
   return (window.supabase || window.supabaseClient || supabase);
 }
 
+
 /* ───────────────── Auth / fetch helpers ───────────────── */
 
 export async function getToken() {
@@ -28,12 +29,32 @@ export async function getToken() {
   return token;
 }
 
-/** Get the current signed-in user (or null). */
+
 export async function whoami() {
-  const { data, error } = await getSb().auth.getUser();
+  const { data: { user }, error } = await supabase.auth.getUser();
   if (error) throw error;
-  return data?.user || null;
+  return user;
 }
+
+export async function loadContributionSummary() {
+  // Use whatever view/RPC you already have; below is a simple members select
+  const { data, error } = await supabase
+    .from('members')
+    .select('membership_status,membership_cancel_at,monthly_contribution_cents,last_paid_at')
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data || {};
+}
+
+// /js/shared/api.js
+export async function resumeContribution() {
+  const url =
+    FUNCTIONS?.resumeContribution ||
+    `${SUPABASE_URL}/functions/v1/resume-contribution`;
+  return xfetch(url, { method: 'POST', body: {} });
+}
+
 
 /** Build a URL with querystring params (skips null/empty). */
 export function withQS(url, params = {}) {

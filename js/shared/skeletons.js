@@ -5,13 +5,16 @@
  * Toggle a skeleton/content pair by prefix.
  * Expects #<prefix>Skeleton and #<prefix>Content in the DOM.
  */
-export function togglePair(prefix, showSkeleton) {
-  const sk = document.getElementById(`${prefix}Skeleton`);
-  const real = document.getElementById(`${prefix}Content`);
-  if (!sk || !real) return;
-  if (showSkeleton) { sk.classList.remove('hidden'); real.classList.add('hidden'); }
-  else { sk.classList.add('hidden'); real.classList.remove('hidden'); }
+// /js/shared/skeletons.js
+export function togglePair(baseId, showSkeleton) {
+  const sk = document.getElementById(`${baseId}Skeleton`);
+  const ct = document.getElementById(`${baseId}Content`);
+  if (!sk || !ct) return;
+  sk.classList.toggle('hidden', !showSkeleton);
+  ct.classList.toggle('hidden', showSkeleton);
 }
+
+export const delay = (ms) => new Promise(r => setTimeout(r, ms));
 
 /**
  * Render a simple list skeleton with N rows into a container.

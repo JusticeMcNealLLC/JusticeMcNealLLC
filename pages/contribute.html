@@ -1,251 +1,278 @@
-<!doctype html>
-<html lang="en" data-page="contribute">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>LLC Portal – Contribute</title>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contribute • Justice McNeal LLC</title>
 
-  <!-- Tailwind (CDN for dev; swap to CLI for prod) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            navy:  '#1f2d4f',
-            cream: '#f6efe6',
-            coral: '#e26b4a',
-            line:  '#e5e7eb'
-          },
-          boxShadow: { soft: '0 10px 25px -10px rgba(2,6,23,.15)' }
-        }
-      }
-    };
-  </script>
-  <style>
-    .skel{animation:shimmer 1.25s linear infinite;background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 37%,#e2e8f0 63%);background-size:400% 100%;border-radius:.5rem}
-    @keyframes shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
-  </style>
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@700&display=swap">
+  <link rel="stylesheet" href="../assets/tailwind.css">
 </head>
 
-<body class="bg-cream text-navy font-sans" data-require-auth="member">
-  <!-- NAVBAR -->
-  <div id="navMount"><div class="h-16 bg-navy/90"></div></div>
+<body class="min-h-screen bg-[#f7f9fc] text-slate-900" data-page="contribute" data-require-auth="member">
+  <div class="mx-auto max-w-5xl px-4 py-6 md:px-6">
 
-  <main class="max-w-5xl mx-auto p-6 space-y-6">
-    <!-- Stripe return status banner -->
-    <div id="statusBanner" class="hidden rounded-md border px-4 py-3 text-sm"></div>
+    <!-- Optional navbar mount -->
+    <div id="navMount" class="mb-4"></div>
 
-    <!-- Header -->
-    <header class="bg-white border border-line rounded-2xl p-6">
-      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 class="text-4xl font-serif tracking-tight">Contribute</h1>
-          <p class="mt-1 text-sm text-gray-600">
-            Signed in as <span id="whoami" class="font-medium text-navy">Loading…</span>
-          </p>
-          <p class="text-sm text-gray-600">Thanks for supporting the family fund.</p>
-        </div>
-        <div class="hidden md:block">
-          <!-- decorative illustration (kept minimal) -->
-          <svg width="280" height="100" viewBox="0 0 300 120" class="text-navy/70" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <g stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round">
-              <circle cx="65"  cy="48" r="18"/><path d="M48 90c2-16 15-26 33-26s31 10 33 26"/>
-              <circle cx="135" cy="42" r="20"/><path d="M110 90c3-18 17-28 38-28s35 10 38 28"/>
-              <circle cx="205" cy="46" r="18"/><path d="M188 90c2-16 15-26 33-26s31 10 33 26"/>
-            </g>
-          </svg>
-        </div>
-      </div>
-    </header>
+    <!-- Stripe return banner -->
+    <div id="statusBanner" class="hidden mb-4 card p-3 text-sm text-slate-700"></div>
 
-    <!-- Overview skeleton -->
-    <section id="topSkeleton" class="bg-white border border-line rounded-2xl p-6 skel"
-             role="status" aria-live="polite" aria-busy="true">
-      <div class="grid gap-6 md:grid-cols-3">
-        <div class="space-y-2"><div class="h-3 w-28 bg-white/60"></div><div class="h-8 w-28 bg-white/70"></div></div>
-        <div class="space-y-2"><div class="h-3 w-32 bg-white/60"></div><div class="h-8 w-36 bg-white/70"></div></div>
-        <div class="space-y-2"><div class="h-3 w-32 bg-white/60"></div><div class="h-8 w-40 bg-white/70"></div></div>
-      </div>
-    </section>
+<!-- Hero -->
+<section class="hero bg-dots" aria-labelledby="pageTitle">
+  <div class="flex items-center justify-between gap-8">
+    <div class="min-w-0 w-full">
 
-    <!-- Overview content -->
-    <section id="topContent" class="hidden bg-white border border-line rounded-2xl p-6">
-      <div class="grid gap-6 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-line">
-        <div class="pr-0 md:pr-6">
-          <div class="text-sm text-gray-500">Current Pledge</div>
-          <div id="currentPledge" class="text-3xl font-bold tabular-nums">$0</div>
-        </div>
-        <div class="pt-6 md:pt-0 md:px-6">
-          <div class="text-sm text-gray-500">Total Contributed</div>
-          <div id="totalContributed" class="text-3xl font-bold tabular-nums">$0</div>
-        </div>
-        <div class="pt-6 md:pt-0 md:pl-6">
-          <div class="text-sm text-gray-500">Next Billing</div>
-          <div class="mt-1 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-indigo-800">
-            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1z"/>
-              <path d="M18 9H2v7a2 2 0 002 2h12a2 2 0 002-2V9z"/>
-            </svg>
-            <span id="nextBillingDate" class="text-base font-semibold">—</span>
-          </div>
-        </div>
-      </div>
-    </section>
+      <!-- SKELETON (shown first) -->
+<div id="heroSkeleton" class="skel flex flex-col gap-3">
+  <div class="skel-title"></div>
+  <div class="skel-sub"></div>
+  <div class="mt-2 flex gap-3">
+    <div class="skel-btn w-56"></div>
+    <div class="skel-btn w-44"></div>
+  </div>
+</div>
 
-    <!-- Layout: left (controls) / right (projection) -->
-    <div class="grid gap-6 md:grid-cols-2">
-      <!-- Controls -->
-      <section class="bg-white border border-line rounded-2xl p-6">
-        <h2 class="text-lg font-semibold">Set monthly contribution</h2>
 
-        <!-- Amount block -->
-        <div class="rounded-xl border border-amber-100 bg-amber-50 p-2 mt-3">
-          <div class="flex items-center justify-between gap-2">
-            <label for="pledgeInput" class="sr-only">Monthly contribution</label>
-            <div class="flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1.5 shadow-sm">
-              <span class="text-gray-500">$</span>
-              <input id="pledgeInput"
-                     type="number" inputmode="numeric" step="10" min="50" max="2000" required
-                     aria-label="Monthly contribution amount"
-                     aria-describedby="amtError"
-                     class="w-24 bg-transparent text-navy font-semibold outline-none" />
-              <span class="text-gray-400 text-sm">/mo</span>
-            </div>
-          </div>
-          <p id="amtError" class="mt-1 text-sm text-rose-600" style="display:none;" aria-live="polite"></p>
-        </div>
+      <!-- CONTENT (hidden until user loads) -->
+      <div id="heroContent" class="hidden">
+        <h1 id="pageTitle" class="font-display text-3xl md:text-4xl">Contribute</h1>
+        <p class="mt-2 text-slate-600">
+          Signed in as <span id="whoami" class="font-medium" aria-live="polite">Loading…</span>
+        </p>
 
-        <!-- Slider -->
-        <input id="pledgeSlider" type="range" min="50" max="2000" step="10"
-               class="mt-4 w-full accent-navy" />
-
-        <!-- Presets -->
-        <div class="mt-3 flex flex-wrap gap-2">
-          <button class="preset px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200" data-preset="50">$50</button>
-          <button class="preset px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200" data-preset="100">$100</button>
-          <button class="preset px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200" data-preset="250">$250</button>
-          <button class="preset px-3 py-1.5 rounded-md bg-gray-100 hover:bg-gray-200" data-preset="500">$500</button>
-        </div>
-
-        <!-- Default card summary (if any) -->
-        <div id="cardSummaryRow" class="mt-4 hidden">
-          <div class="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            <span id="cardSummaryTxt">Default card • —</span>
-          </div>
-        </div>
-
-        <!-- Actions -->
-        <div class="mt-4 space-y-2">
-          <button id="btnOpenConfirm" type="button"
-                  class="w-full rounded-md bg-navy px-4 py-2 text-sm text-white hover:bg-navy/90">
-            Update Contribution
+        <!-- Main actions -->
+        <div id="rowMainActions" class="actions-row">
+          <button id="btnOpenConfirm" class="btn-primary">
+            <span id="btnOpenConfirmText">Update Contribution</span>
           </button>
-          <a id="btnBillingPortal" href="#" class="block text-center text-sm text-navy/80 hover:text-navy">
-            Manage in Billing Portal
-          </a>
-          <div id="saveMsg" class="text-sm text-gray-500"></div>
+          <button id="btnBillingPortal" class="btn-light">Manage Billing</button>
         </div>
 
-        <!-- “How it works” (simplified, friendlier) -->
-        <div class="mt-6 rounded-2xl border border-line bg-white p-4">
-          <h3 class="text-sm font-medium text-gray-700 mb-2">How it works</h3>
-          <ul class="space-y-2 text-sm text-gray-700">
-            <li class="flex items-start gap-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-navy"></span> Changes apply on your next billing date.</li>
-            <li class="flex items-start gap-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-navy"></span> You’ll need a default card on file.</li>
-            <li class="flex items-start gap-2"><span class="mt-1 h-1.5 w-1.5 rounded-full bg-navy"></span> You can cancel any time.</li>
-          </ul>
+        <!-- Cancel state (only when cancel_at exists) -->
+        <div id="rowCancelActions" class="actions-row hidden">
+          <span id="cancelNote" class="badge-warning"></span>
+          <button id="btnResume" class="btn-ghost">Cancel cancellation</button>
         </div>
-      </section>
-
-      <!-- Projection -->
-      <section class="bg-white border border-line rounded-2xl p-6">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">Projection</h2>
-          <label class="text-sm text-gray-600">
-            Horizon:
-            <select id="horizon" class="ml-1 rounded-md border border-line bg-white px-2 py-1 text-sm">
-              <option value="3">3 months</option>
-              <option value="6" selected>6 months</option>
-              <option value="12">12 months</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="mt-3 rounded-xl border border-line bg-white p-4 shadow-soft">
-          <div class="text-sm text-gray-600">In <span id="projMonths">6</span> months at
-            <span id="projRate">$0/mo</span> you will contribute:</div>
-          <div id="projTotal" class="mt-1 text-3xl font-bold tabular-nums">$0</div>
-          <p class="mt-2 text-xs text-gray-500">Estimates are illustrative.</p>
-        </div>
-      </section>
+      </div>
     </div>
 
-    <!-- Invoices skeleton -->
-    <section id="recentSkeleton" class="bg-white border border-line rounded-2xl p-6 skel"
-             role="status" aria-live="polite" aria-busy="true">
-      <div class="h-5 w-40 bg-white/70 rounded mb-3"></div>
-      <div class="space-y-3">
-        <div class="h-10 bg-white/70 rounded"></div>
-        <div class="h-10 bg-white/70 rounded"></div>
-        <div class="h-10 bg-white/70 rounded"></div>
+    <!-- Illustration -->
+    <div class="hidden md:block shrink-0">
+      <svg class="w-48 h-48" viewBox="0 0 200 200" fill="none" aria-hidden="true">
+        <rect x="36" y="70" width="120" height="70" rx="8" fill="#bfdbfe"/>
+        <circle cx="84" cy="130" r="14" fill="#fde68a"/>
+        <circle cx="112" cy="124" r="18" fill="#fbbf24"/>
+        <path d="M40 130c18-12 38-6 52-18 14-12 22-40 44-40 10 0 18 6 24 16"
+              stroke="#2563eb" stroke-width="4" fill="none"/>
+        <path d="M140 78 l10 -16 l10 16 l-6 26 h-8z" fill="#f59e0b" stroke="#d97706" stroke-width="2"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+
+<!-- Top stats: skeleton -->
+<!-- Top stats: skeleton that matches the 3-pill layout -->
+<div id="topSkeleton" class="mt-6 skel">
+  <div class="stat-pills">
+    <!-- Pill 1 -->
+    <div class="stat-pill">
+      <div class="skel-line h-3 w-24"></div>            <!-- label -->
+      <div class="mt-3 skel-bar h-8 w-28"></div>        <!-- big value -->
+      <div class="mt-2 skel-line h-3 w-40"></div>       <!-- "Default card" line -->
+    </div>
+
+    <!-- Pill 2 -->
+    <div class="stat-pill">
+      <div class="skel-line h-3 w-24"></div>            <!-- label -->
+      <div class="mt-3 skel-bar h-8 w-28"></div>        <!-- big value -->
+    </div>
+
+    <!-- Pill 3 -->
+    <div class="stat-pill">
+      <div class="skel-line h-3 w-24"></div>            <!-- label -->
+      <div class="mt-3 skel-bar h-8 w-28"></div>        <!-- big value -->
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Real content -->
+<div id="topContent" class="mt-6 hidden">
+  <div class="stat-pills">
+    <!-- your three pills -->
+    <!-- Pill 1: Current pledge (+ default card) -->
+    <div class="stat-pill">
+      <div class="stat-label">Current pledge</div>
+      <div class="stat-value">
+        <span id="currentPledge">$—</span>
+        <span class="text-lg font-medium opacity-70 align-top">/mo</span>
       </div>
-    </section>
+      <div id="cardSummaryRow" class="hidden mt-2 text-sm text-slate-600">
+        Default card: <span id="cardSummaryTxt" class="font-medium"></span>
+      </div>
+    </div>
 
-<!-- Activity: content -->
-<section id="activityContent" class="bg-white border border-line rounded-2xl p-6 space-y-4 shadow-soft">
-  <div class="flex items-center justify-between">
-    <h2 class="text-lg font-semibold">Recent activity</h2>
-    <a href="/pages/history.html" class="text-sm text-gray-600 hover:text-navy">View full history →</a>
+    <!-- Pill 2 -->
+    <div class="stat-pill">
+      <div class="stat-label">Total contributed</div>
+      <div id="totalContributed" class="stat-value">$—</div>
+    </div>
+
+    <!-- Pill 3 -->
+    <div class="stat-pill">
+      <div class="stat-label">Next billing</div>
+      <div id="nextBillingDate" class="stat-value">—</div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<!-- Set monthly contribution -->
+<div class="card p-6 mt-6">
+  <h2 class="text-lg font-semibold">Set monthly contribution</h2>
+  <p class="text-sm text-slate-600">
+    Use the presets or slider, then click <em>Update Contribution</em> above.
+  </p>
+
+  <!-- Controls row: slider + amount aligned -->
+  <div class="mt-4 grid grid-cols-[1fr_auto] items-center gap-4">
+    <input id="pledgeSlider" type="range" min="50" max="2000" step="10" class="w-full accent-blue">
+    <label for="pledgeInput" class="sr-only">Amount</label>
+    <div class="input-prefix">
+      <span>$</span>
+      <input id="pledgeInput" type="number" min="50" max="2000" step="10"
+             class="w-28 rounded-xl border border-slate-300 pr-3 py-2 text-right"
+             inputmode="numeric">
+    </div>
   </div>
 
-  <!-- legend -->
-  <div class="flex flex-wrap gap-2 text-xs">
-    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-1 ring-1 ring-emerald-200">● Paid</span>
-    <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 px-2 py-1 ring-1 ring-amber-200">● Upcoming</span>
-    <span class="inline-flex items-center gap-1 rounded-full bg-rose-50 text-rose-700 px-2 py-1 ring-1 ring-rose-200">● Failed</span>
-    <span class="inline-flex items-center gap-1 rounded-full bg-slate-50 text-slate-700 px-2 py-1 ring-1 ring-slate-200">● Pledge change</span>
+  <!-- Presets -->
+  <div id="presetRow" class="mt-3 flex flex-wrap gap-2">
+    <button type="button" data-preset="50"  class="chip">$50</button>
+    <button type="button" data-preset="100" class="chip">$100</button>
+    <button type="button" data-preset="250" class="chip">$250</button>
+    <button type="button" data-preset="500" class="chip">$500</button>
   </div>
 
-  <div id="activityList" class="divide-y border rounded-lg bg-white"></div>
-  <p class="text-xs text-gray-500">Click a row to view a receipt when available.</p>
-</section>
-
-<!-- (keep your existing skeleton block, just retitle if you want) -->
-<section id="activitySkeleton" class="bg-white border border-line rounded-2xl p-6 skel hidden">
-  <div class="h-4 w-40 bg-white/70 rounded mb-2"></div>
-  <div class="space-y-3">
-    <div class="h-10 bg-white/70 rounded"></div>
-    <div class="h-10 bg-white/70 rounded"></div>
-    <div class="h-10 bg-white/70 rounded"></div>
+  <div id="amtError" class="hidden mt-2 text-sm text-rose-600">
+    Minimum is $50. Maximum is $2,000.
   </div>
-</section>
+  <div id="saveMsg" class="mt-2 text-sm text-slate-600"></div>
+
+  <ul class="mt-4 text-sm text-slate-600 list-disc list-inside">
+    <li>Changes take effect on your next billing date.</li>
+    <li>A default payment method is required for billing.</li>
+    <li>You can cancel anytime from the billing portal.</li>
+  </ul>
+</div>
+
+
+<!-- Projection -->
+<div class="card p-6 mt-6">
+  <!-- Header: title (left) + Horizon select (right) -->
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <h2 class="text-lg font-semibold">Projection</h2>
+
+    <div class="flex items-center gap-3">
+      <label for="projHorizon" class="text-sm text-slate-600">Horizon</label>
+      <div class="select-wrap">
+        <select id="projHorizon" name="horizon" class="select-native" aria-label="Projection horizon">
+          <option value="3">3 months</option>
+          <option value="6" selected>6 months</option>
+          <option value="12">12 months</option>
+        </select>
+        <!-- custom caret -->
+        <svg class="select-chevron" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd"
+                d="M5.23 7.21a.75.75 0 011.06.02L10 10.17l3.71-2.94a.75.75 0 111.02 1.1l-4.24 3.36a.75.75 0 01-.94 0L5.21 8.33a.75.75 0 01.02-1.12z"
+                clip-rule="evenodd"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <p class="mt-2 text-sm text-slate-600">Estimate based on your current selection.</p>
+
+  <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="rounded-xl bg-brand-50/60 border border-white p-4">
+      <div class="text-xs uppercase tracking-wide text-slate-600">Rate</div>
+      <div id="projRate" class="mt-1 text-xl font-semibold">—</div>
+    </div>
+
+    <div class="rounded-xl bg-slate-50/60 border border-white p-4">
+      <div class="text-xs uppercase tracking-wide text-slate-600">Projected total</div>
+      <div id="projTotal" class="mt-1 text-xl font-semibold">—</div>
+    </div>
+  </div>
+</div>
+
+
+    <!-- Recent activity -->
+<div id="recentSkeleton" class="card p-6 mt-6">
+  <div class="skel">
+    <div class="skel-line h-5 w-40 mb-4"></div>
+    <div class="space-y-3">
+      <div class="skel-bar h-10"></div>
+      <div class="skel-bar h-10"></div>
+      <div class="skel-bar h-10"></div>
+    </div>
+  </div>
+</div>
+
+    <div id="activitySkeleton" class="card p-6 mt-6 hidden skel"></div>
+
+<div id="activityContent" class="card p-0 mt-6 hidden">
+  <!-- Header: title + legend (left), history link (right) -->
+  <div class="px-6 pt-6 flex items-center justify-between">
+    <div class="activity-header">
+      <h2 class="text-lg font-semibold">Recent activity</h2>
+      <!-- Legend is injected here by JS -->
+      <div id="activityLegend" class="activity-legend-row"></div>
+    </div>
+
+    <a href="/pages/history.html" class="text-sm text-brand-700 hover:underline">
+      View full history →
+    </a>
+  </div>
+
+  <!-- Activity list (JS renders rows here) -->
+  <div id="activityList" class="px-6 pt-2 pb-2"></div>
+
+  <!-- Single footnote (JS will reuse/replace because of the data-attribute) -->
+<p data-activity-footnote="1" class="act-footer">
+  Click a row to view a receipt when available.
+</p>
+
+</div>
 
 
     <!-- Confirm modal -->
-    <div id="confirmModal"
-         class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-         role="dialog" aria-modal="true" aria-labelledby="confirmTitle" tabindex="-1">
-      <div class="w-full max-w-md rounded-2xl bg-white border border-line p-6 shadow-lg">
-        <h2 id="confirmTitle" class="text-xl font-semibold mb-3">Confirm Contribution Update</h2>
-        <div id="confirmBody" class="text-sm text-gray-700 space-y-2"></div>
-        <div class="mt-5 flex justify-end gap-3">
-          <button id="btnCancelConfirm" type="button"
-                  class="px-4 py-2 rounded-lg border border-line bg-white text-navy hover:bg-gray-50">
-            Cancel
-          </button>
-          <button id="btnConfirmUpdate" type="button"
-                  class="px-4 py-2 rounded-lg bg-coral text-white hover:bg-coral/90">
-            Confirm
-          </button>
+    <div id="confirmModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
+      <div class="card p-6 max-w-md w-full">
+        <h3 id="confirmTitle" class="text-lg font-semibold">Confirm update</h3>
+        <p id="confirmBody" class="mt-2 text-sm text-slate-600">This takes effect on your next billing date.</p>
+        <div class="mt-6 flex justify-end gap-3">
+          <button id="btnCancelConfirm" class="btn-light">Cancel</button>
+          <button id="btnConfirmUpdate" class="btn-primary">Confirm</button>
         </div>
       </div>
     </div>
-  </main>
 
-  <!-- Modules -->
-  <script type="module" src="/js/navbar/index.js"></script>
+  </div>
+
+  <!-- Scripts -->
   <script type="module" src="/js/shared/bootstrap.js"></script>
+  <!-- Shim that imports /js/contribute/index.js -->
   <script type="module" src="/js/pages/contribute/index.js"></script>
+  <!-- Keep navbar if needed -->
+  <script type="module" src="/js/navbar/index.js"></script>
 </body>
 </html>

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Forgot password — Justice McNeal LLC</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-dvh grid place-items-center bg-slate-50">
+  <main class="w-full max-w-md rounded-2xl bg-white/90 p-6 ring-1 ring-black/5 shadow">
+    <h1 class="text-lg font-semibold">Reset your password</h1>
+    <p class="mt-1 text-sm text-slate-600">Enter the email associated with your account.</p>
+
+    <form id="forgotForm" class="mt-4 space-y-3">
+      <label class="block">
+        <span class="mb-1 block text-sm text-slate-600">Email</span>
+        <input id="email" type="email" required autocomplete="email"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500"
+               placeholder="you@example.com" />
+      </label>
+
+      <button class="w-full rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+        Send reset link
+      </button>
+    </form>
+
+    <p id="msg" class="mt-3 text-sm text-slate-600"></p>
+
+    <div class="mt-6 text-xs text-slate-500">
+      <a class="hover:underline" href="/pages/login.html">Back to sign in</a>
+    </div>
+  </main>
+
+  <!-- bootstrap gives us window.supabaseClient -->
+  <script type="module" src="/js/shared/bootstrap.js"></script>
+  <script type="module">
+    const supa = window.supabaseClient;
+    const form = document.getElementById('forgotForm');
+    const emailEl = document.getElementById('email');
+    const msg = document.getElementById('msg');
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = emailEl.value.trim();
+      if (!email) return;
+
+      // Redirect back to your reset page (must be whitelisted in Supabase Auth > Redirect URLs)
+      const redirectTo = `${location.origin}/pages/reset.html`;
+
+      // Always show a neutral message (avoid account enumeration)
+      msg.textContent = 'If an account exists for that email, we sent a reset link. Please check your inbox.';
+      try {
+        await supa.auth.resetPasswordForEmail(email, { redirectTo });
+      } catch {}
+      // Nothing else to reveal here.
+    });
+  </script>
+</body>
+</html>

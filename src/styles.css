@@ -1,0 +1,136 @@
+/* src/styles.css
+   Tailwind build entry + Contribute page theme components
+---------------------------------------------------------- */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- Utilities ---------- */
+@layer utilities {
+  /* soft ambient card shadow used across the page */
+  .shadow-soft { box-shadow: 0 20px 40px rgba(2, 6, 23, 0.08); }
+
+  /* subtle dotted background (used on hero) */
+  .bg-dots {
+    background-image: radial-gradient(rgba(37, 99, 235, 0.08) 1px, transparent 1px);
+    background-size: 14px 14px;
+  }
+
+  /* make inputs/sliders use brand blue */
+  .accent-blue { accent-color: theme(colors.blue.600); }
+}
+
+/* ---------- Components ---------- */
+@layer components {
+  /* cards & hero */
+  .card { @apply bg-white/90 backdrop-blur border border-white/60 rounded-2xl shadow-soft; }
+  .hero { @apply rounded-3xl bg-gradient-to-br from-brand-50 via-white to-brand-50 border border-white/60 p-8 md:p-10 shadow-soft; }
+
+  /* -------- Buttons (normalized height/rounding) -------- */
+  .btn        { @apply inline-flex h-10 items-center justify-center gap-2 rounded-xl px-4 font-semibold transition-shadow; }
+  .btn-primary{ @apply btn bg-brand-600 text-white shadow hover:bg-brand-700; }
+  .btn-light  { @apply btn bg-white text-slate-900 border border-slate-200 shadow hover:bg-slate-50; }
+  .btn-ghost  { @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50; }
+
+  /* tiny status pills (legend) */
+  .pill        { @apply inline-flex items-center rounded-full border px-2 py-0.5 text-[11px]; }
+  .pill-paid   { @apply pill bg-emerald-100/70 text-emerald-900 border-emerald-300/60; }
+  .pill-up     { @apply pill bg-amber-100/70  text-amber-900  border-amber-300/60; }
+  .pill-fail   { @apply pill bg-rose-100/70   text-rose-900   border-rose-300/60; }
+  .pill-pledge { @apply pill bg-sky-100/70    text-sky-900    border-sky-300/60; }
+
+  /* section wrapper */
+  .skel { @apply animate-pulse; }
+
+  /* base bg for ALL skeleton shapes */
+  .skel-bg { @apply bg-slate-200/80 dark:bg-slate-700; }
+
+  /* common shapes */
+  .skel-line { @apply skel-bg rounded-full; }   /* thin lines */
+  .skel-bar  { @apply skel-bg rounded-2xl; }    /* thick bars/cards */
+  .skel-btn  { @apply skel-bg h-10 rounded-xl; }/* button pill */
+
+  /* helpful presets (optional) */
+  .skel-title { @apply skel-line h-9  w-56; }
+  .skel-sub   { @apply skel-line h-5  w-72; }
+
+  /* stats */
+  .stat-label { @apply text-[13px] text-slate-500; }
+  .stat-value { @apply text-3xl font-semibold text-slate-900; }
+  .stat-pills { @apply grid grid-cols-1 md:grid-cols-3 gap-4; }
+  .stat-pill  { @apply rounded-2xl border border-blue-100 bg-white p-5 shadow-soft; }
+
+  /* stronger chips (set-amount presets) */
+  .chip { @apply inline-flex items-center rounded-full border border-slate-300 bg-slate-50 text-slate-800 text-sm px-3.5 py-1.5 hover:bg-slate-100; }
+  .chip.is-selected { @apply bg-blue-600 text-white border-blue-600 shadow; }
+
+  /* input with left prefix (e.g., $) */
+  .input-prefix { @apply relative inline-flex items-center; }
+  .input-prefix > span  { @apply absolute left-3 inset-y-0 flex items-center text-slate-500 pointer-events-none; }
+  .input-prefix > input { @apply pl-6; }
+
+  /* ---------- Recent activity: COMPACT LIST with right amount ---------- */
+  .activity-list        { @apply rounded-2xl border border-slate-200 bg-white overflow-hidden; }
+  .activity-row-compact { @apply grid grid-cols-[1fr_auto] gap-4 items-start p-3 md:p-3 border-t border-slate-200; }
+  .activity-row-compact:first-child { @apply border-t-0; }
+
+  .act-title   { @apply text-[15px] leading-tight text-slate-900 font-semibold; } /* line 1: Date · Title */
+  .act-sub     { @apply mt-1 text-xs leading-tight text-slate-600 flex items-center gap-2; } /* line 2: chip + subtext */
+  .act-right   { @apply text-right whitespace-nowrap; }
+  .act-amt     { @apply text-slate-900 font-semibold; }
+  .act-receipt { @apply block text-xs text-blue-600 hover:underline; }
+
+  /* ---------- (Optional) Legacy table styles ----------
+     Keep only if you still render the table somewhere.
+  ------------------------------------------------------ */
+  .table-card { @apply rounded-2xl border border-slate-200/80 bg-white overflow-hidden; }
+  .table-head th { @apply text-left text-sm font-medium text-slate-500 py-3; }
+  .table-row td  { @apply py-3 text-slate-900; }
+  .table-amt     { @apply text-right whitespace-nowrap; }
+  .table-receipt { @apply text-right whitespace-nowrap; }
+  .link-muted    { @apply text-blue-600 hover:underline; }
+
+  /* Header row: "Recent activity" + legend on the same line */
+  .activity-header    { @apply flex items-center gap-3 flex-wrap; }
+  .activity-legend-row{ @apply flex items-center gap-2; }
+
+  /* Add a dot to the left of each pill (plain CSS so no invalid @apply) */
+  .pill-dot { @apply inline-flex items-center gap-1.5; }
+  .pill-dot::before {
+    content: "";
+    width: 0.4rem; height: 0.4rem; border-radius: 9999px;
+    background: currentColor; display: inline-block; opacity: .6;
+  }
+
+  /* Align footnote with the row’s left text and separate with a faint divider */
+  .act-footer { @apply pl-9 pr-6 pb-6 pt-2 text-xs text-slate-500 border-t border-slate-200; }
+
+  /* Clickable row styling */
+  .activity-row-compact.is-clickable { @apply cursor-pointer hover:bg-slate-50 transition-colors; }
+  .activity-row-compact.is-clickable:active { @apply bg-slate-100; }
+
+  /* Reusable select */
+  .select-wrap { @apply relative inline-flex items-center; }
+  .select-native {
+    @apply appearance-none rounded-xl border border-slate-300 bg-white
+           text-sm text-slate-800 px-3 pr-9 py-1.5 shadow-sm
+           focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-brand-600;
+    min-width: 8.5rem;      /* fits '12 months' */
+  }
+  .select-chevron {
+    @apply pointer-events-none absolute right-3 text-slate-400;
+    width: 14px; height: 14px;
+  }
+
+  /* ---------- New: Hero actions alignment & cancellation badge ---------- */
+
+  /* keeps the button row(s) aligned consistently */
+  .actions-row { @apply mt-6 flex flex-wrap items-center gap-3; }
+
+  /* badge look that matches button height */
+  .badge { @apply inline-flex h-10 items-center rounded-xl px-3 border text-sm; }
+  .badge-warning { @apply badge bg-amber-50 border-amber-200 text-amber-800; }
+
+ 
+}
