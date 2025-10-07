@@ -3,18 +3,19 @@ import { supabase } from '/js/shared/supabaseClient.js';
 import { toast } from '/js/shared/ui.js';
 
 const $  = (s, r=document) => r.querySelector(s);
-const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
 
 function isRecoveryLike() {
   const hash = new URLSearchParams(location.hash.slice(1));
-  // Covers recovery / invite / magiclink flows (access_token present)
-  return hash.get('type') === 'recovery' || hash.get('type') === 'invite' || hash.has('access_token');
+  return hash.get('type') === 'recovery' || hash.has('access_token') || hash.get('type') === 'invite';
+}
+
+function isFromAdminInvite() {
+  const qp = new URLSearchParams(location.search);
+  return qp.get('from') === 'invite';
 }
 
 function step(n) {
-  // show/hide sections
   for (let i=1;i<=3;i++) $('#step-'+i)?.classList.toggle('hidden', i!==n);
-  // update dots
   for (let i=1;i<=3;i++) {
     const d = $('#dot-'+i);
     if (!d) continue;
@@ -46,24 +47,15 @@ async function getUser() {
 }
 
 async function ensureMemberRow(user) {
-  // Upsert into members keyed by auth_user_id so they exist immediately
-  const patch = {
-    auth_user_id: user.id,
-    email: user.email,
-  };
-  const { error } = await supabase
-    .from('members')
-    .upsert(patch, { onConflict: 'auth_user_id' });
+  const patch = { auth_user_id: user.id, email: user.email };
+  const { error } = await supabase.from('members').upsert(patch, { onConflict: 'auth_user_id' });
   if (error) throw error;
 }
 
 async function saveMemberFields({ full_name, phone }) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not signed in');
-  const { error } = await supabase
-    .from('members')
-    .update({ full_name, phone })
-    .eq('auth_user_id', user.id);
+  const { error } = await supabase.from('members').update({ full_name, phone }).eq('auth_user_id', user.id);
   if (error) throw error;
 }
 
@@ -83,22 +75,18 @@ async function init() {
     const user = await getUser();
     if (!user) return location.replace('/pages/login.html');
 
-    // Pre-fill email, ensure member exists
     if (emailEl) emailEl.value = user.email || '';
     await ensureMemberRow(user);
 
-    // Decide which step to show first:
-    // - If URL has recovery/invite tokens OR we can't be sure a password exists -> show Step 1
-    // - Otherwise (normal signed-in session) -> skip to Step 2
-    // Heuristic: if email is confirmed or there's a provider, assume password exists
-    const hasPw = !!user?.app_metadata?.provider || !!user?.email_confirmed_at;
-    if (isRecoveryLike() || !hasPw) {
+    // Force password step for invites or recovery; otherwise show details
+    const forcePw = isFromAdminInvite() || isRecoveryLike();
+    if (forcePw) {
       step(1);
     } else {
       step(2);
     }
 
-    // Step 1: set password
+    // ---- Step 1: set password ----
     pwBtn?.addEventListener('click', async (e) => {
       e.preventDefault();
 
@@ -111,11 +99,10 @@ async function init() {
           const { error } = await supabase.auth.updateUser({ password: newPw.value });
           if (error) throw error;
           toast('Password saved', { kind: 'success' });
-          await markInviteAcceptedIfAny(); // keep your current behavior
+          await markInviteAcceptedIfAny();
         }
-        // clear inputs & advance
-        if (newPw) newPw.value = '';
-        if (conf) conf.value = '';
+        newPw.value = '';
+        conf.value = '';
         if (pwMsg) pwMsg.textContent = '';
         step(2);
         full?.focus();
@@ -128,7 +115,7 @@ async function init() {
       }
     });
 
-    // Step 2: save details
+    // ---- Step 2: save details ----
     saveBtn?.addEventListener('click', async (e) => {
       e.preventDefault();
 
