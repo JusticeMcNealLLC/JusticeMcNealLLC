@@ -15,16 +15,16 @@ ready(async () => {
   // 1) Enforce access first
   await ensureAuthIfRequired();
 
-  // 2) Which page?
-  const bodyPage = document.body?.dataset?.page;
-  const htmlPage = document.documentElement?.dataset?.page;
-  const entry = bodyPage || htmlPage;
+  // 2) Determine which page to boot
+  const entry =
+    document.body?.dataset?.page ||
+    document.documentElement?.dataset?.page;
   if (!entry) return;
 
-  // 3) Try flat and index patterns
+  // 3) Try both patterns (index.js first for foldered pages)
   const tryUrls = [
-    new URL(`../pages/${entry}.js`, import.meta.url).href,
     new URL(`../pages/${entry}/index.js`, import.meta.url).href,
+    new URL(`../pages/${entry}.js`, import.meta.url).href,
   ];
 
   let loaded = false;
@@ -33,17 +33,21 @@ ready(async () => {
       await import(href);
       loaded = true;
       break;
-    } catch {
-      // keep trying
+    } catch (err) {
+      // keep trying quietly
     }
   }
 
   if (!loaded) {
-    console.error(`[bootstrap] Failed to load page module "${entry}" from:`, tryUrls);
-    toast?.(`Could not load page module: ${entry}`, { type: 'error' });
+    console.error(
+      `[bootstrap] Failed to load page module "${entry}" from:`,
+      tryUrls
+    );
+    toast?.(`Could not load page module: ${entry}`, { kind: 'error' });
   }
 });
 
+// Global unhandled-rejection catcher (nice for Supabase fetches)
 window.addEventListener('unhandledrejection', (e) => {
   console.error('[bootstrap] Unhandled promise rejection', e.reason);
 });
