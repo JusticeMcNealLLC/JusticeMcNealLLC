@@ -41,11 +41,7 @@ function renderNav() {
 
             <!-- Desktop links -->
             <div class="hidden md:flex items-center gap-1 sm:gap-2">
-              <a href="/pages/account.html"     class="nav-link">Account</a>
               <a href="/pages/contribute.html"  class="nav-link">Contribute</a>
-              <a href="/index.html#events"      class="nav-link">Events</a>
-              <a href="/index.html#photos"      class="nav-link">Photos</a>
-              <a href="/index.html#goals"       class="nav-link">Goals</a>
 
               <!-- Admin dropdown (admin-only) -->
               <div id="adminGroup" class="relative hidden">
@@ -111,11 +107,7 @@ function renderNav() {
     </div>
 
     <nav id="mobileMenu" class="mt-2 overflow-y-auto overscroll-contain">
-      <a href="/pages/account.html"     class="mnav-link">Account</a>
       <a href="/pages/contribute.html"  class="mnav-link">Contribute</a>
-      <a href="/index.html#events"      class="mnav-link">Events</a>
-      <a href="/index.html#photos"      class="mnav-link">Photos</a>
-      <a href="/index.html#goals"       class="mnav-link">Goals</a>
 
       <!-- Admin (mobile) -->
       <div id="adminGroupMobile" class="hidden mt-1">

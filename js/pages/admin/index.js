@@ -160,17 +160,21 @@ function getAdminInviteUrl() {
   // Prefer config if present, else fallback to the canonical path on this project
   return (FUNCTIONS && FUNCTIONS.adminInvite) || `${supabase.supabaseUrl}/functions/v1/admin-invite`;
 }
+
 function msgInvite(el, text, ok) {
   if (!el) { ok ? showInfo(text) : showError(text); return; }
-  el.className = 'mt-3 rounded-md px-3 py-2 text-sm ' +
+  el.className =
+    'mt-3 rounded-md px-3 py-2 text-sm ' +
     (ok
       ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
       : 'bg-amber-50 text-amber-800 border border-amber-200');
   el.textContent = text;
   el.classList.remove('hidden');
 }
+
 function uuidish() { try { return crypto.randomUUID(); } catch { return 'req-' + Date.now(); } }
 
+/** Call Edge Function and surface full JSON + better errors. */
 async function callAdminInvite(email) {
   const { data:{ session } } = await supabase.auth.getSession();
   if (!session?.access_token) throw new Error('Not authenticated');
@@ -185,8 +189,13 @@ async function callAdminInvite(email) {
     body: JSON.stringify({ email, request_id: uuidish() }),
   });
 
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json?.error || res.statusText);
+  let json = {};
+  try { json = await res.json(); } catch {}
+  if (!res.ok) {
+    const fallback = await res.text().catch(() => res.statusText);
+    const msg = json?.error || json?.message || fallback || 'Invite failed';
+    throw new Error(msg);
+  }
   return json;
 }
 
@@ -211,13 +220,41 @@ async function callAdminInvite(email) {
     msgInvite(msgEl, 'Sending invite…', true);
 
     try {
-      await callAdminInvite(email);
-      msgInvite(msgEl, `Invite sent to ${email}.`, true);
+      const res = await callAdminInvite(email);
 
+      // Branch 1: existing auth user → Magic Link returned (no invite email sent)
+      if (res?.already_user) {
+        if (res.magic_link) {
+          msgInvite(msgEl, `User already exists. Magic link generated.`, true);
+          // Append a clickable link
+          const a = document.createElement('a');
+          a.href = res.magic_link;
+          a.target = '_blank';
+          a.rel = 'noreferrer';
+          a.textContent = ' Open Magic Link';
+          a.className = 'underline ml-1';
+          msgEl.appendChild(a);
+        } else {
+          msgInvite(
+            msgEl,
+            `User already exists. Member linked${res.member_id ? ` (id: ${res.member_id})` : ''}.`,
+            true
+          );
+        }
+      }
+      // Branch 2: new email → invite sent by Supabase
+      else if (res?.invited) {
+        msgInvite(msgEl, `Invite sent to ${email}. Check inbox/spam.`, true);
+      }
+      // Fallback: show whatever came back
+      else {
+        msgInvite(msgEl, 'Invite processed.', true);
+      }
+
+      // reset form and refresh lists
       emailEl.value = '';
       const chk = document.getElementById('inviteIsAdmin'); // optional UI only
       if (chk) chk.checked = false;
-
       document.dispatchEvent(new CustomEvent('admin:refresh'));
     } catch (err) {
       msgInvite(msgEl, String(err?.message || err), false);

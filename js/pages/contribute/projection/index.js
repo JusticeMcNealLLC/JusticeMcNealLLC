@@ -28,14 +28,25 @@ export default function mountProjection({ store, bus }) {
 
   function getTotalContributedDollars() {
     const s = store?.get?.() || {};
-    // cents fields that may exist in your state
-    const cents =
-      s.totals?.totalContributedCents ??
-      s.totalContributedCents ??
-      s.member?.total_contributed_cents ??
-      s.total_contributed_cents ??
-      0;
-    return Math.max(0, Math.round(Number(cents || 0) / 100));
+
+    // Prefer explicit dollar fields if present
+    const dollarsFields = [
+      s.pledge?.totalContributed,         // dollars (from summary)
+      s.totalContributed,                 // dollars (generic)
+      s.totals?.totalContributedDollars,  // dollars (alt bucket)
+    ].map(Number).find((v) => Number.isFinite(v) && v >= 0);
+
+    if (Number.isFinite(dollarsFields)) return Math.round(dollarsFields);
+
+    // Otherwise look for cents and convert
+    const centsFields = [
+      s.totals?.totalContributedCents,
+      s.totalContributedCents,
+      s.member?.total_contributed_cents,
+      s.total_contributed_cents,
+    ].map(Number).find((v) => Number.isFinite(v) && v >= 0);
+
+    return centsFields ? Math.max(0, Math.round(centsFields / 100)) : 0;
   }
 
   function renderRate(dollars) {
@@ -52,12 +63,13 @@ export default function mountProjection({ store, bus }) {
 
   // ---- main calc -----------------------------------------------------------
   function recalc() {
-    const months = getMonths();
-    const monthly = getMonthly();                    // dollars
-    const contributed = getTotalContributedDollars(); // dollars
+    const months      = getMonths();
+    const monthly     = getMonthly();                     // dollars
+    const contributed = getTotalContributedDollars();     // dollars
 
     renderRate(monthly);
 
+    // contributed-so-far + monthly × horizon
     const projectedTotal = contributed + (monthly * months);
     renderProjectedTotal(projectedTotal);
   }
@@ -65,24 +77,25 @@ export default function mountProjection({ store, bus }) {
   // ---- wire events ---------------------------------------------------------
   els.horizon?.addEventListener('change', recalc);
 
-  // From setcontribution/index.js
+  // From setcontribution/index.js → update when user moves slider
   bus?.on?.('contrib:input:change', () => recalc());
 
-  // When summary loads (initial values)
+  // When pledge summary loads, mirror fresh numbers (cents or dollars) into the store
   bus?.on?.('pledge:summary:loaded', (payload = {}) => {
-    // If the event provides fresh numbers, mirror them into store so our getters see them
-    store?.patch?.((s) => ({
-      ...s,
-      pledge: {
-        ...(s.pledge || {}),
-        ...(typeof payload.currentMonthly === 'number'
-          ? { currentMonthly: payload.currentMonthly }
-          : {}),
-      },
-      ...(typeof payload.totalContributedCents === 'number'
-        ? { totalContributedCents: payload.totalContributedCents }
-        : {}),
-    }));
+    const patch = {};
+    if (typeof payload.currentMonthly === 'number') {
+      patch.pledge = { ...(store.get()?.pledge || {}), currentMonthly: payload.currentMonthly };
+    }
+
+    // Accept either cents or dollars from the summary
+    if (typeof payload.totalContributedCents === 'number') {
+      patch.totalContributedCents = payload.totalContributedCents;
+    } else if (typeof payload.totalContributed === 'number') {
+      patch.totalContributedCents = Math.round(payload.totalContributed * 100);
+      patch.totalContributed = payload.totalContributed;
+    }
+
+    if (Object.keys(patch).length) store?.patch?.((s) => ({ ...s, ...patch }));
     recalc();
   });
 

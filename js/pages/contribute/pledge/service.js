@@ -1,41 +1,65 @@
 // /js/contribute/pledge/service.js
-// Wired to your shared API wrappers + Edge functions:
-// - loadContributionStatus -> GET get-contribution-status
-// - listPaymentMethods -> GET list-payment-methods (fallback summary)
-import { loadContributionStatus, listPaymentMethods } from '/js/shared/api.js';
+import { xfetch } from '/js/shared/api.js';
+import { SUPABASE_URL, FUNCTIONS } from '/js/shared/config.js';
 
+const GET_STATUS_URL =
+  FUNCTIONS?.getContributionStatus ||
+  `${SUPABASE_URL}/functions/v1/get-contribution-status`;
 
-function centsToDollars(c) { return Number.isFinite(+c) ? Math.round(+c) / 100 : 0; }
-
+const START_URL =
+  FUNCTIONS?.startContribution ||
+  `${SUPABASE_URL}/functions/v1/start-contribution`;
 
 export async function fetchPledgeSummary() {
-const s = await loadContributionStatus();
-const m = s?.member || {};
+  // xfetch returns JSON already in your project
+  const s = await xfetch(GET_STATUS_URL);
 
+  const cents = (n) => (Number.isFinite(+n) ? +n : 0);
+  const toUsd = (c) => Math.round(cents(c) / 100);
 
-const currentMonthly = centsToDollars(m.monthly_contribution_cents || 0);
-const totalContributed = centsToDollars(s?.total_contributed_cents || 0);
-const nextBillingDate = s?.next_billing_iso || null;
+  const member = s?.member ?? null;
 
+  // Card summary text
+  let cardSummary = null;
+  if (s?.default_payment_method?.brand && s?.default_payment_method?.last4) {
+    const b = s.default_payment_method.brand;
+    const last4 = s.default_payment_method.last4;
+    const m = s.default_payment_method;
+    const exp = (m.exp_month && m.exp_year) ? ` · exp ${String(m.exp_month).padStart(2,'0')}/${String(m.exp_year).slice(-2)}` : '';
+    cardSummary = `${b} •••• ${last4}${exp}`;
+  }
 
-// Prefer server-provided default PM; fallback to list-payment-methods
-let hasDefaultCard = !!s?.has_default_pm;
-let cardSummary = '';
-if (s?.default_payment_method) {
-const pm = s.default_payment_method;
-const brand = (pm.brand || 'CARD').toUpperCase();
-cardSummary = `${brand} •••• ${pm.last4} exp ${pm.exp_month}/${String(pm.exp_year).slice(-2)}`;
-} else if (!hasDefaultCard) {
-const pmPayload = await listPaymentMethods().catch(() => ({ data: [] }));
-const def = pmPayload?.data?.find(p => p.default);
-if (def) {
-hasDefaultCard = true;
-const brand = (def.brand || 'CARD').toUpperCase();
-cardSummary = `${brand} •••• ${def.last4} exp ${def.exp_month}/${String(def.exp_year).slice(-2)}`;
+  return {
+    // keep the raw member for other components
+    member,
+
+    // what the page expects (in DOLLARS)
+    currentMonthly: toUsd(member?.monthly_contribution_cents),
+    totalContributed: toUsd(s?.total_contributed_cents),
+    nextBillingDate: s?.next_billing_iso ?? null,
+
+    hasDefaultCard: !!s?.has_default_pm,
+    cardSummary,
+
+    // cancel block used by the banner
+    cancel: s?.cancel ?? {
+      scheduled: false,
+      cancel_at_iso: null,
+      cancel_at_unix: null,
+      cancel_at_period_end: false,
+    },
+  };
 }
-}
 
-
-// return member so header can show name/email
-return { member: m, currentMonthly, totalContributed, nextBillingDate, hasDefaultCard, cardSummary };
+/**
+ * Update pledge amount or open portal (unchanged behavior).
+ * payload: { pledge_dollars, effect_now?, portal_only? }
+ * Returns JSON from the edge function.
+ */
+export async function updatePledge(payload) {
+  if (!payload || typeof payload !== 'object') payload = {};
+  return xfetch(START_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
