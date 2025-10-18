@@ -1,132 +1,216 @@
 <!doctype html>
-<html lang="en" data-page="onboarding">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>LLC Portal – Welcome</title>
+  <title>Justice McNeal LLC — Welcome</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0b0b0c">
 
-  <!-- Tailwind (CDN for dev; move to CLI for prod) -->
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          boxShadow: { soft: '0 10px 25px -10px rgba(2,6,23,.15)' },
-          colors: {
-            navy:  '#1f2d4f',
-            cream: '#f6efe6',
-            coral: '#e26b4a',
-            line:  '#e5e7eb'
-          }
+          fontFamily: { sans: ['Inter','ui-sans-serif','system-ui'], brand: ['Cinzel','serif'] },
+          colors: { onyx:'#0b0b0c', onyx2:'#121214', gold:'#D4AF37', goldSoft:'#E0C463', line:'rgba(255,255,255,.12)' },
+          boxShadow: { card:'0 24px 60px rgba(0,0,0,.45)' }
         }
       }
     }
   </script>
+
+  <style>
+    /* Stepper pills */
+.step {
+  background: rgba(0,0,0,.28);     /* darker than the card-light surface */
+  color: rgba(255,255,255,.78);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: .5rem;
+  padding: .5rem .75rem;
+}
+.step:hover { background: rgba(0,0,0,.34); }
+
+/* Completed step (optional, if you mark it in JS) */
+.is-done {
+  background: linear-gradient(90deg, #0A1F14, #0E2A1B);
+  color: #C9F7DA;
+  border-color: rgba(0,0,0,.45);
+}
+
+/* Active step already looks gold; just ensure text contrast */
+.is-active {
+  background: linear-gradient(90deg,#D4AF37,#E0C463);
+  color: #0b0b0c;
+  border-color: rgba(212,175,55,.6);
+}
+
+    .gold-glow { text-shadow: 0 0 12px rgba(212,175,55,.25); }
+    .surface {
+      background:
+        radial-gradient(1000px 600px at 10% -10%, rgba(212,175,55,.08), transparent 60%),
+        radial-gradient(900px 500px at 120% 120%, rgba(255,255,255,.06), transparent 55%),
+        linear-gradient(180deg, #111 0%, #0b0b0c 100%);
+      position: relative; overflow:hidden; isolation:isolate;
+    }
+    .surface::after {
+      content:""; position:absolute; inset:0;
+      background:url("/images/bg/assets/tree_001.png") right -60px bottom -40px/520px auto no-repeat;
+      opacity:.12; filter:grayscale(1) contrast(1.1); pointer-events:none; z-index:-1;
+    }
+    .grid-mask::before {
+      content:""; position:absolute; inset:0;
+      background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+                       linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+      background-size:28px 28px;
+      mask:radial-gradient(circle at 40% 40%, black 60%, transparent 75%);
+      pointer-events:none; z-index:-1;
+    }
+    .card      { background: rgba(18,18,20,.7);  border:1px solid var(--line, rgba(255,255,255,.12)); backdrop-filter: blur(6px); box-shadow:0 24px 60px rgba(0,0,0,.45); }
+    .card-light{ background: rgba(255,255,255,.06); border:1px solid var(--line, rgba(255,255,255,.12)); backdrop-filter: blur(6px); }
+    .field {
+      width:100%; border-radius:.5rem; border:1px solid rgba(255,255,255,.12);
+      background:rgba(255,255,255,.05); color:white; padding:.5rem .75rem; font-size:.875rem; outline:none;
+    }
+    .field::placeholder { color: rgba(255,255,255,.45) }
+    .field:focus { box-shadow: 0 0 0 8px rgba(212,175,55,.15); border-color: rgba(212,175,55,.65) }
+    .is-active { background:linear-gradient(90deg,#D4AF37,#E0C463); color:#0b0b0c; border-color:rgba(212,175,55,.6) }
+    @media (prefers-reduced-motion: reduce){
+      *{animation-duration:.001ms !important; transition-duration:.01ms !important;}
+    }
+  </style>
 </head>
 
-<body class="bg-cream text-navy font-sans" data-require-auth="user">
-  <!-- Navbar (optional during onboarding) -->
-  <div id="navMount"><div class="h-16 bg-navy/90"></div></div>
+<body class="min-h-dvh surface grid-mask text-white font-sans">
+  <!-- Brand top -->
+  <header class="sticky top-0 z-10">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-5 py-4">
+      <div class="flex items-center gap-3 rounded-full bg-white/5 px-3 py-1 ring-1 ring-white/10 backdrop-blur">
+        <img src="/images/logo/gld_004.png" alt="JM monogram, Justice McNeal LLC"
+             class="h-5 w-5 object-contain" srcset="/images/logo/gld_004.png 1x, /images/logo/gld_004.png 2x">
+        <span class="text-[11px] tracking-wider font-semibold text-white/90">Justice McNeal LLC</span>
+        <span class="ml-1 inline-block h-2 w-2 rounded-full bg-gold/90 shadow-[0_0_12px] shadow-gold/40"></span>
+      </div>
+      <span class="hidden sm:inline-flex items-center gap-2 text-[11px] text-white/70">Onboarding</span>
+    </div>
+  </header>
 
-  <main class="max-w-3xl mx-auto p-6 space-y-6">
-    <!-- Header -->
-    <header class="bg-white border border-line rounded-2xl p-6">
+  <main class="mx-auto max-w-3xl p-6 space-y-6">
+    <!-- Intro -->
+    <header class="card rounded-2xl p-6">
       <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 class="text-2xl md:text-3xl font-bold tracking-tight">Welcome to Justice McNeal LLC</h1>
-          <p class="text-sm text-gray-600">A few quick steps and you’ll be all set.</p>
+          <h1 class="font-brand text-2xl md:text-3xl text-gold gold-glow tracking-tight">Welcome to Justice McNeal LLC</h1>
+          <p class="text-sm text-white/70">A few quick steps and you’ll be all set.</p>
         </div>
-        <a href="/pages/login.html" class="text-sm underline hover:no-underline">Having trouble?</a>
+        <a href="/pages/login.html" class="text-sm text-gold hover:text-goldSoft">Having trouble?</a>
       </div>
     </header>
 
     <!-- Stepper -->
-    <section class="bg-white border border-line rounded-2xl p-6">
-      <ol class="grid gap-2 sm:grid-cols-3 text-sm">
-        <li id="dot-1" class="rounded-md border border-line px-3 py-2 bg-gray-50">1) Set password</li>
-        <li id="dot-2" class="rounded-md border border-line px-3 py-2">2) Your details</li>
-        <li id="dot-3" class="rounded-md border border-line px-3 py-2">3) Finish</li>
-      </ol>
-    </section>
+<section class="card-light rounded-2xl p-6">
+  <ol class="grid gap-2 sm:grid-cols-3 text-sm">
+    <li id="dot-1" class="step is-active">1) Set password</li>
+    <li id="dot-2" class="step">2) Your details</li>
+    <li id="dot-3" class="step">3) Finish</li>
+  </ol>
+</section>
+
 
     <!-- STEP 1: Password -->
-    <section id="step-1" class="bg-white border border-line rounded-2xl p-6 space-y-4">
-      <h2 class="text-lg font-semibold">Create your password</h2>
-      <p class="text-sm text-gray-600">Use at least 8 characters. You’re currently signed in via invite link.</p>
+    <section id="step-1" class="card rounded-2xl p-6 space-y-4">
+      <h2 class="text-lg font-semibold text-gold">Create your password</h2>
+      <p class="text-sm text-white/70">Use at least 8 characters. You’re currently signed in via invite link.</p>
 
       <div class="grid gap-3 sm:grid-cols-2">
         <label class="block">
-          <span class="text-sm text-gray-600">New password</span>
-          <input id="newPassword" type="password" autocomplete="new-password"
-                 class="mt-1 w-full rounded-md border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy" />
+          <span class="text-sm text-white/70">New password</span>
+          <input id="newPassword" type="password" autocomplete="new-password" minlength="8"
+                 class="field mt-1" placeholder="••••••••" />
         </label>
         <label class="block">
-          <span class="text-sm text-gray-600">Confirm password</span>
-          <input id="confirmPassword" type="password" autocomplete="new-password"
-                 class="mt-1 w-full rounded-md border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy" />
+          <span class="text-sm text-white/70">Confirm password</span>
+          <input id="confirmPassword" type="password" autocomplete="new-password" minlength="8"
+                 class="field mt-1" placeholder="••••••••" />
         </label>
       </div>
 
-      <div class="flex gap-2">
+      <div class="flex flex-wrap items-center gap-3">
         <button id="btnSetPassword"
-                class="rounded-md bg-navy px-4 py-2 text-sm text-white hover:bg-navy/90">
+                class="rounded-md bg-gradient-to-r from-gold/90 to-goldSoft/90 px-4 py-2 text-sm font-semibold text-onyx hover:to-gold focus:outline-none focus:ring-4 focus:ring-gold/30">
           Save & Continue
         </button>
-        <div id="pwMsg" class="text-sm text-gray-500"></div>
+        <div id="pwMsg" class="text-sm text-white/70"></div>
       </div>
     </section>
 
     <!-- STEP 2: Details -->
-    <section id="step-2" class="hidden bg-white border border-line rounded-2xl p-6 space-y-4">
-      <h2 class="text-lg font-semibold">Your details</h2>
+    <section id="step-2" class="hidden card rounded-2xl p-6 space-y-4">
+      <h2 class="text-lg font-semibold text-gold">Your details</h2>
 
       <div class="grid gap-3 sm:grid-cols-2">
         <label class="block">
-          <span class="text-sm text-gray-600">Full name</span>
-          <input id="fullName" class="mt-1 w-full rounded-md border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy" />
+          <span class="text-sm text-white/70">Full name</span>
+          <input id="fullName" class="field mt-1" placeholder="e.g., Jordan McNeal" />
         </label>
         <label class="block">
-          <span class="text-sm text-gray-600">Phone (optional)</span>
-          <input id="phone" class="mt-1 w-full rounded-md border border-line px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy" />
+          <span class="text-sm text-white/70">Phone (optional)</span>
+          <input id="phone" class="field mt-1" inputmode="tel" placeholder="(555) 123-4567" />
         </label>
       </div>
 
       <label class="block">
-        <span class="text-sm text-gray-600">Email</span>
-        <input id="email" disabled class="mt-1 w-full rounded-md border border-line bg-gray-50 px-3 py-2 text-sm" />
-        <p class="text-xs text-gray-500 mt-1">Email changes require verification; you can request that later from Profile.</p>
+        <span class="text-sm text-white/70">Email</span>
+        <input id="email" disabled class="field mt-1 opacity-70" />
+        <p class="text-xs text-white/60 mt-1">Email changes require verification; you can request that later from Profile.</p>
       </label>
 
       <!-- Optional avatar placeholder -->
       <fieldset class="opacity-60">
-        <legend class="text-sm font-medium text-gray-600 mb-1">Profile photo (coming soon)</legend>
-        <input type="file" disabled class="w-full rounded-md border border-line px-3 py-2 text-sm bg-gray-50" />
+        <legend class="text-sm text-white/70 mb-1">Profile photo (coming soon)</legend>
+        <input type="file" disabled class="field bg-white/10" />
       </fieldset>
 
-      <div class="flex gap-2">
+      <div class="flex flex-wrap items-center gap-3">
         <button id="btnSaveDetails"
-                class="rounded-md bg-navy px-4 py-2 text-sm text-white hover:bg-navy/90">
+                class="rounded-md bg-gradient-to-r from-gold/90 to-goldSoft/90 px-4 py-2 text-sm font-semibold text-onyx hover:to-gold focus:outline-none focus:ring-4 focus:ring-gold/30">
           Save & Continue
         </button>
-        <div id="detailsMsg" class="text-sm text-gray-500"></div>
+        <div id="detailsMsg" class="text-sm text-white/70"></div>
       </div>
     </section>
 
     <!-- STEP 3: Done -->
-    <section id="step-3" class="hidden bg-white border border-line rounded-2xl p-6 space-y-3">
-      <h2 class="text-lg font-semibold">All set 🎉</h2>
-      <p class="text-sm text-gray-600">You can manage your pledge and see invoices anytime.</p>
+    <section id="step-3" class="hidden card rounded-2xl p-6 space-y-3">
+      <h2 class="text-lg font-semibold text-gold">All set 🎉</h2>
+      <p class="text-sm text-white/70">You can manage your pledge and see invoices anytime.</p>
       <div class="flex flex-wrap gap-2">
-        <a class="rounded-md bg-navy px-4 py-2 text-sm text-white hover:bg-navy/90" href="/pages/account.html">Go to Account</a>
-        <a class="rounded-md border border-line bg-white px-4 py-2 text-sm hover:bg-gray-50" href="/index.html">Back to Home</a>
+        <a class="rounded-md bg-gradient-to-r from-gold/90 to-goldSoft/90 px-4 py-2 text-sm font-semibold text-onyx hover:to-gold focus:outline-none focus:ring-4 focus:ring-gold/30" href="/pages/account.html">Go to Account</a>
+        <a class="rounded-md border border-[color:var(--line)] bg-white/5 px-4 py-2 text-sm hover:bg-white/10" href="/index.html">Back to Home</a>
       </div>
     </section>
   </main>
 
-  <!-- Footer mount (optional) -->
-  <div id="footerMount"></div>
+  <footer class="pb-6 text-center text-[11px] text-white/60">
+    <span>© <span id="year"></span> Justice McNeal LLC • Legacy • Unity • Prosperity</span>
+  </footer>
 
-  <!-- Modules -->
+  <!-- UI helpers only -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const y = document.getElementById('year');
+      if (y) y.textContent = new Date().getFullYear();
+    });
+  </script>
+
+  <!-- Keep these scripts in this order -->
   <script type="module" src="/js/shared/bootstrap.js"></script>
   <script type="module" src="/js/navbar/index.js"></script>
   <script type="module" src="/js/pages/onboarding/index.js"></script>

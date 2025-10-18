@@ -11,9 +11,10 @@
     tailwind.config = {
       theme: {
         extend: {
+          boxShadow: { soft: '0 10px 25px -10px rgba(2,6,23,.15)' },
           colors: {
-            navy:  '#1f2d4f',
-            cream: '#f6efe6',
+            navy:  '#0f1f3a',
+            cream: '#f6f7fb',
             coral: '#e26b4a',
             line:  '#e5e7eb'
           }
@@ -22,35 +23,28 @@
     }
   </script>
 
-  <!-- Tiny data-URI favicon (L on navy) -->
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231f2d4f'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-family='Arial' font-size='36' fill='white'%3EL%3C/text%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230f1f3a'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-family='Inter,Arial' font-size='36' fill='white'%3EJM%3C/text%3E%3C/svg%3E">
 </head>
 
 <body class="bg-cream font-sans text-navy" data-require-auth="admin">
-  <!-- NAVBAR (inserted by /js/page_inserts/navbar.js) -->
-  <div id="navMount">
-    <div class="h-16 bg-navy/90"></div>
-  </div>
+  <!-- NAVBAR -->
+  <div id="navMount"><div class="h-16 bg-navy/90"></div></div>
 
-  <main class="max-w-6xl mx-auto p-6 space-y-6">
-    <!-- Banners that index.js toggles -->
-    <div id="adminError" class="hidden rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"></div>
-    <div id="adminInfo"  class="hidden rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"></div>
+  <main class="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
+    <!-- Banners -->
+    <div id="adminError" class="hidden rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 shadow-soft"></div>
+    <div id="adminInfo"  class="hidden rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-soft"></div>
 
-    <!-- Header -->
-    <header class="bg-white border border-line rounded-2xl p-6">
-      <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 class="text-4xl font-serif tracking-tight">Admin — Members</h1>
-          <p class="mt-1 text-sm text-gray-600">Manage subscriptions, invoices, and statuses.</p>
-          <a href="/pages/account.html" class="mt-3 inline-flex items-center gap-2 text-sm text-navy/80 hover:text-navy">
-            <span aria-hidden="true">←</span> Back to Account
-          </a>
+    <!-- HERO -->
+    <header class="rounded-2xl border border-line bg-white shadow-soft">
+      <div class="p-6 md:p-7 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        <div class="space-y-1">
+          <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">Admin</h1>
+          <p class="text-sm text-gray-600">Manage members, subscriptions, and invoices.</p>
         </div>
-
-        <!-- simple line art to mirror Contribute -->
         <div class="mx-auto md:mx-0">
-          <svg width="280" height="110" viewBox="0 0 300 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-navy/70">
+          <!-- tiny illo to echo Contribute vibe -->
+          <svg width="220" height="96" viewBox="0 0 300 120" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-navy/70">
             <g stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round">
               <circle cx="135" cy="42" r="20"/><path d="M110 90c3-18 17-28 38-28s35 10 38 28"/>
               <circle cx="65" cy="48" r="18"/><path d="M48 90c2-16 15-26 33-26s31 10 33 26"/>
@@ -59,132 +53,118 @@
           </svg>
         </div>
       </div>
+
+      <!-- quick stats strip -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-line p-4 md:p-6">
+        <div class="rounded-xl border border-line bg-white p-4">
+          <div class="text-xs uppercase tracking-wide text-gray-500">Members</div>
+          <div class="mt-1 text-2xl font-semibold tabular-nums"><span id="memberCount">0</span></div>
+        </div>
+        <div class="rounded-xl border border-line bg-white p-4">
+          <div class="text-xs uppercase tracking-wide text-gray-500">Filters</div>
+          <div class="mt-1 text-sm text-gray-700">Use search & status to refine.</div>
+        </div>
+        <div class="rounded-xl border border-line bg-white p-4">
+          <div class="text-xs uppercase tracking-wide text-gray-500">Actions</div>
+          <div class="mt-2">
+            <button id="btnRefresh" class="inline-flex items-center gap-2 rounded-md border border-line bg-white px-3 py-2 text-sm hover:bg-gray-50">
+              Refresh
+            </button>
+          </div>
+        </div>
+      </div>
     </header>
 
-    <!-- Filters / Actions -->
-    <section class="bg-white border border-line rounded-2xl p-4 md:p-6">
-      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div class="flex flex-1 flex-col gap-3 sm:flex-row">
-          <!-- Search -->
-          <label class="sm:w-80">
-            <span class="sr-only">Search</span>
-            <input id="q" type="search" placeholder="Search name or email"
-                   class="w-full rounded-md border border-line bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-navy" />
-          </label>
+    <!-- FILTERS -->
+    <section class="rounded-2xl border border-line bg-white p-4 md:p-6 shadow-soft">
+      <div class="grid gap-3 md:grid-cols-[minmax(260px,1fr)_180px_auto] md:items-center">
+        <!-- Search -->
+        <label class="block">
+          <span class="sr-only">Search</span>
+          <input id="q" type="search" placeholder="Search name or email"
+                 class="w-full rounded-md border border-line bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-navy" />
+        </label>
 
-          <!-- Status filter -->
-          <label class="sm:w-56">
-            <span class="sr-only">Status</span>
-            <select id="status"
-                    class="w-full rounded-md border border-line bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-navy">
-              <option value="all">All statuses</option>
-              <option value="active">Active</option>
-              <option value="past_due">Past due</option>
-              <option value="canceled">Canceled</option>
-              <option value="inactive">Inactive</option>
-              <option value="rejoining">Rejoining</option>
-              <option value="chargeback">Chargeback</option>
-              <option value="suspended">Suspended</option>
-            </select>
-          </label>
-        </div>
+        <!-- Status -->
+        <label class="block">
+          <span class="sr-only">Status</span>
+          <select id="status"
+                  class="w-full rounded-md border border-line bg-white px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-navy">
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="past_due">Past due</option>
+            <option value="canceled">Canceled</option>
+            <option value="inactive">Inactive</option>
+            <option value="rejoining">Rejoining</option>
+            <option value="chargeback">Chargeback</option>
+            <option value="suspended">Suspended</option>
+          </select>
+        </label>
 
-        <div class="flex items-center gap-2">
-          <button id="btnRefresh"
-                  class="inline-flex items-center gap-2 rounded-md border border-line bg-white px-4 py-2 text-sm hover:bg-gray-50">
-            <span>Refresh</span>
-          </button>
-        </div>
-      </div>
-    </section>
-<!-- Invite Member -->
-<!-- Invite Member -->
-<section class="bg-white border border-line rounded-2xl p-4 md:p-6">
-  <h2 class="text-lg font-semibold">Invite a member</h2>
-
-  <form id="inviteForm" class="mt-3 grid gap-3 md:grid-cols-[minmax(260px,380px)_auto_auto] items-start">
-    <label class="w-full">
-      <span class="sr-only">Email</span>
-      <input id="inviteEmail" type="email" required placeholder="name@example.com"
-             class="w-full rounded-md border border-line bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-navy" />
-    </label>
-
-    <!-- Optional admin toggle (your admin-invite function doesn’t use it; you can omit if not needed) -->
-    <label class="inline-flex items-center gap-2 text-sm">
-      <input id="inviteIsAdmin" type="checkbox" class="h-4 w-4 rounded border-line" />
-      Make admin (optional)
-    </label>
-
-    <div class="flex gap-2">
-      <button id="btnInvite"
-              class="rounded-md bg-navy px-4 py-2 text-sm text-white hover:bg-navy/90">
-        Send invite
-      </button>
-      <button id="btnInviteReset" type="button"
-              class="rounded-md border border-line bg-white px-3 py-2 text-sm hover:bg-gray-50">
-        Reset
-      </button>
-    </div>
-  </form>
-
-  <!-- Local message area for this card -->
-  <div id="inviteMsg" class="hidden mt-3 rounded-md px-3 py-2 text-sm"></div>
-
-  <p class="mt-2 text-xs text-gray-600">
-    The invitee will receive an email to set a password and sign in.
-  </p>
-</section>
-
-
-    <!-- Members skeleton -->
-    <section id="memberSkeleton" class="bg-white border border-line rounded-2xl p-6 animate-pulse">
-      <div class="flex items-center justify-between mb-4">
-        <div class="h-5 w-40 bg-gray-200 rounded"></div>
-        <div class="h-4 w-20 bg-gray-200 rounded"></div>
-      </div>
-      <div class="space-y-3">
-        <div class="h-14 bg-gray-200 rounded"></div>
-        <div class="h-14 bg-gray-200 rounded"></div>
-        <div class="h-14 bg-gray-200 rounded"></div>
+        <!-- (hasCancel + sort are injected by JS to match layout) -->
+        <div id="filterExtras" class="flex items-center gap-3"></div>
       </div>
     </section>
 
-    <!-- Members list -->
-    <section class="bg-white border border-line rounded-2xl p-2 md:p-3">
-      <div class="flex items-center justify-between px-4 py-3">
+    <!-- INVITE -->
+    <section class="rounded-2xl border border-line bg-white p-4 md:p-6 shadow-soft">
+      <h2 class="text-lg font-semibold">Invite a member</h2>
+
+      <form id="inviteForm" class="mt-3 grid gap-3 md:grid-cols-[minmax(260px,380px)_auto_auto] items-start">
+        <label class="w-full">
+          <span class="sr-only">Email</span>
+          <input id="inviteEmail" type="email" required placeholder="name@example.com"
+                 class="w-full rounded-md border border-line bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-navy" />
+        </label>
+
+        <label class="inline-flex items-center gap-2 text-sm">
+          <input id="inviteIsAdmin" type="checkbox" class="h-4 w-4 rounded border-line" />
+          Make admin (optional)
+        </label>
+
+        <div class="flex gap-2">
+          <button id="btnInvite" class="rounded-md bg-navy px-4 py-2 text-sm text-white hover:bg-navy/90">Send invite</button>
+          <button id="btnInviteReset" type="button" class="rounded-md border border-line bg-white px-3 py-2 text-sm hover:bg-gray-50">Reset</button>
+        </div>
+      </form>
+
+      <div id="inviteMsg" class="hidden mt-3 rounded-md px-3 py-2 text-sm"></div>
+      <p class="mt-2 text-xs text-gray-600">The invitee will receive an email to set a password and sign in.</p>
+    </section>
+
+    <!-- TABLE -->
+    <section class="rounded-2xl border border-line bg-white shadow-soft">
+      <div class="flex items-center justify-between px-4 md:px-5 py-3">
         <h2 class="text-lg font-semibold">Members</h2>
-        <div class="text-sm text-gray-600">Count: <span id="memberCount" class="tabular-nums">0</span></div>
       </div>
-
       <div class="border-t border-line"></div>
 
-      <!-- List container (index.js fills) -->
-<!-- Column headers (desktop-only) -->
-<div class="hidden md:grid px-4 py-2 text-xs font-medium text-gray-500
-            md:grid-cols-[1fr_7rem_6rem_7rem_7rem_4rem_24rem] gap-2">
-  <div>Member</div>
-  <div>Status</div>
-  <div class="text-right">Pledge</div>
-  <div class="text-right">Last Paid</div>
-  <div class="text-right">Cancels</div>   <!-- 👈 new -->
-  <div class="text-right">Missed</div>
-  <div class="text-right">Actions</div>
-</div>
-<div class="border-t border-line"></div>
-
-
-      <div id="memberList" class="divide-y divide-line">
-        <!-- rows injected by index.js -->
+      <!-- Headers -->
+      <div class="hidden md:grid px-4 md:px-5 py-2 text-xs font-medium text-gray-500
+                  md:grid-cols-[1fr_7rem_6rem_7rem_7rem_4rem_24rem] gap-2">
+        <div>Member</div>
+        <div>Status</div>
+        <div class="text-right">Pledge</div>
+        <div class="text-right">Last Paid</div>
+        <div class="text-right">Cancels</div>
+        <div class="text-right">Missed</div>
+        <div class="text-right">Actions</div>
       </div>
+      <div class="border-t border-line"></div>
+
+      <!-- Skeleton -->
+      <section id="memberSkeleton" class="p-5 hidden"></section>
+
+      <!-- Rows -->
+      <div id="memberList" class="divide-y divide-line"></div>
     </section>
   </main>
 
-  <!-- FOOTER (inserted) -->
   <div id="footerMount"></div>
 
   <!-- Modules -->
   <script type="module" src="/js/shared/bootstrap.js"></script>
- <script type="module" src="/js/navbar/index.js"></script>
+  <script type="module" src="/js/navbar/index.js"></script>
   <script type="module" src="/js/pages/admin/index.js"></script>
 </body>
 </html>
