@@ -29,28 +29,36 @@
 
   <style>
     /* Stepper pills */
+/* Base pill */
 .step {
-  background: rgba(0,0,0,.28);     /* darker than the card-light surface */
+  background: rgba(0,0,0,.28);
   color: rgba(255,255,255,.78);
   border: 1px solid rgba(255,255,255,.14);
   border-radius: .5rem;
   padding: .5rem .75rem;
+  transition: background .2s ease, color .2s ease, border-color .2s ease;
 }
 .step:hover { background: rgba(0,0,0,.34); }
 
-/* Completed step (optional, if you mark it in JS) */
-.is-done {
-  background: linear-gradient(90deg, #0A1F14, #0E2A1B);
-  color: #C9F7DA;
-  border-color: rgba(0,0,0,.45);
-}
-
-/* Active step already looks gold; just ensure text contrast */
-.is-active {
+/* <-- JS sets this when the step is active or completed */
+.step.bg-emerald-50 {
+  /* use gold theme instead of literal emerald */
   background: linear-gradient(90deg,#D4AF37,#E0C463);
   color: #0b0b0c;
-  border-color: rgba(212,175,55,.6);
 }
+
+/* <-- JS sets this on future steps (not reached yet) */
+.step.bg-gray-50 {
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.55);
+}
+
+/* <-- JS sets this together with bg-emerald-50 */
+.step.border-emerald-200 {
+  border-color: rgba(212,175,55,.60) !important;
+  box-shadow: 0 0 0 1px rgba(212,175,55,.18) inset;
+}
+
 
     .gold-glow { text-shadow: 0 0 12px rgba(212,175,55,.25); }
     .surface {
@@ -117,11 +125,12 @@
     <!-- Stepper -->
 <section class="card-light rounded-2xl p-6">
   <ol class="grid gap-2 sm:grid-cols-3 text-sm">
-    <li id="dot-1" class="step is-active">1) Set password</li>
-    <li id="dot-2" class="step">2) Your details</li>
-    <li id="dot-3" class="step">3) Finish</li>
+    <li id="dot-1" class="step bg-emerald-50 border-emerald-200">1) Set password</li>
+    <li id="dot-2" class="step bg-gray-50">2) Your details</li>
+    <li id="dot-3" class="step bg-gray-50">3) Finish</li>
   </ol>
 </section>
+
 
 
     <!-- STEP 1: Password -->

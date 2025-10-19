@@ -1,215 +1,277 @@
 <!doctype html>
-<html lang="en" data-page="index">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Justice McNeal LLC — Home</title>
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0b0b0c">
 
-  <!-- Tailwind (CDN for dev; switch to CLI/PostCSS for prod) -->
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&display=swap">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
-          boxShadow: { soft: '0 10px 25px -10px rgba(2,6,23,.15)' },
-          colors: {
-            navy: '#1f2d4f',   /* deep header/navy */
-            cream: '#f6efe6',  /* page background */
-            coral: '#e26b4a',  /* accent */
-            line:  '#e5e7eb'   /* card borders */
-          }
+          fontFamily: { sans: ['Inter','ui-sans-serif','system-ui'], brand: ['Cinzel','serif'] },
+          colors: { onyx:'#0b0b0c', onyx2:'#121214', gold:'#D4AF37', goldSoft:'#E0C463', line:'rgba(255,255,255,.12)' },
+          boxShadow: { card:'0 24px 60px rgba(0,0,0,.45)', glow:'0 0 0 1px rgba(212,175,55,.22), 0 10px 30px rgba(0,0,0,.35)' }
         }
       }
     }
   </script>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231f2d4f'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-family='Arial' font-size='36' fill='white'%3EJ%3C/text%3E%3C/svg%3E">
+
   <style>
-    .skel{animation:shimmer 1.25s linear infinite;background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 37%,#e2e8f0 63%);background-size:400% 100%;border-radius:.5rem}
-    @keyframes shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+    .surface{
+      background:
+        radial-gradient(1000px 600px at 10% -10%, rgba(212,175,55,.08), transparent 60%),
+        radial-gradient(900px 500px at 120% 120%, rgba(255,255,255,.06), transparent 55%),
+        linear-gradient(180deg, #111 0%, #0b0b0c 100%);
+  position: relative; overflow-x:hidden; isolation:isolate; min-height:100dvh;
+    }
+    .surface::after{
+      content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+      background:url("/images/bg/assets/tree_001.png") right -60px bottom -40px/520px auto no-repeat;
+      opacity:.12; filter:grayscale(1) contrast(1.1);
+    }
+    .grid-mask::before{
+      content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size:28px 28px;
+      mask: radial-gradient(circle at 40% 40%, black 60%, transparent 75%);
+    }
+
+    .card{ background:rgba(18,18,20,.7); border:1px solid var(--line,rgba(255,255,255,.12)); backdrop-filter:blur(6px); border-radius:1rem; box-shadow:0 24px 60px rgba(0,0,0,.45); }
+    .card-soft{ background:rgba(255,255,255,.06); border:1px solid var(--line,rgba(255,255,255,.12)); backdrop-filter:blur(6px); border-radius:1rem; }
+
+    .gold-glow{ text-shadow:0 0 12px rgba(212,175,55,.25) }
+
+    .bar{ height:.65rem; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden }
+    .bar>i{ display:block; height:100%; background:linear-gradient(90deg,#D4AF37,#E0C463) }
+
+    @media (prefers-reduced-motion: reduce){ *{animation-duration:.001ms!important;transition-duration:.01ms!important} }
   </style>
 </head>
-<body class="bg-cream font-sans text-navy">
 
-  <!-- NAVBAR (rendered by /js/page_inserts/navbar.js). Placeholder height prevents layout shift. -->
-  <div id="navMount"><div class="h-16 bg-navy/90"></div></div>
+<body class="surface grid-mask text-white font-sans">
 
-  <main class="max-w-5xl mx-auto p-6 space-y-6">
-    <!-- Hero / Welcome -->
-    <header class="bg-white border border-line rounded-2xl p-6">
-      <div class="grid gap-6 md:grid-cols-2 md:items-center">
-        <div>
-          <h1 class="text-4xl font-serif tracking-tight">Welcome home, <span data-first-name>there</span> 👋</h1>
-          <p class="mt-2 text-sm text-gray-600">This is our family hub for photos, events, and tracking the journey of Justice McNeal LLC.</p>
-          <div class="mt-4 flex gap-3">
-            <a href="#photos" class="rounded-md bg-navy px-4 py-2 text-sm text-white hover:bg-navy/90">View Photos</a>
-            <a href="#events" class="rounded-md border border-line bg-white px-4 py-2 text-sm hover:bg-gray-50">Upcoming Events</a>
+  <!-- NAVBAR mounts here -->
+  <div id="navMount" class="mx-auto max-w-6xl px-4 pt-4"></div>
+
+  <main class="my-10 mx-auto max-w-6xl px-4 pb-16 space-y-6">
+
+    <!-- HEADER BANNER with WELCOME + PRIMARY GOAL -->
+    <header class="card rounded-2xl p-6 md:p-7">
+      <div class="flex flex-col gap-5">
+
+        <!-- Top row: welcome + quick link -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="h-10 w-10 rounded-xl grid place-items-center ring-1 ring-white/15 shadow
+                         bg-[linear-gradient(145deg,#F0D97C_0%,#CDAF3A_60%,#9E8230_100%)]">
+              <img src="/images/logo/gld_004.png" alt="JM" class="h-6 w-6 object-contain">
+            </span>
+            <h1 class="font-brand text-2xl md:text-3xl text-gold gold-glow tracking-[.02em]">
+              Welcome back, <span id="welcomeName">Member</span> <span class="text-white/60 text-base align-middle">| est. 2025</span>
+            </h1>
           </div>
+          <a href="/pages/help.html" class="text-sm text-gold hover:text-goldSoft">Having trouble?</a>
         </div>
 
-        <!-- Goal progress card -->
-        <div class="rounded-2xl border border-line bg-white p-5 shadow-soft">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-sm text-gray-500">LLC Goal</div>
-              <div class="text-lg font-semibold">Net Worth to $1,000,000</div>
+        <!-- Primary Goal moved up here -->
+        <section id="goals" class="rounded-xl border border-white/10 bg-white/5 p-4">
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="text-sm font-semibold text-gold">Primary Goal</h2>
+            <div class="text-xs text-white/70">Target: <span id="goalTarget">$1,000,000</span></div>
+          </div>
+          <div class="mt-2 grid gap-2 md:grid-cols-3 md:items-center">
+            <p class="text-sm text-white/70 md:col-span-1">Build family capital together.</p>
+            <div class="md:col-span-2">
+              <div class="bar"><i id="goalBar" style="width:0%"></i></div>
+              <div class="mt-1 flex items-center justify-between text-xs text-white/60">
+                <span>Current: <span id="goalCurrent">$0</span></span>
+                <span>Progress: <span id="goalPct">0%</span></span>
+                <span>Updated: <span id="goalUpdated">—</span></span>
+              </div>
             </div>
-            <div class="text-right">
-              <div class="text-sm text-gray-500">Progress</div>
-              <div class="text-lg font-semibold" data-goal-pct>0%</div>
-            </div>
           </div>
-          <div class="mt-3 h-3 rounded-full bg-gray-100 overflow-hidden">
-            <div class="h-full bg-emerald-500 transition-all" style="width:0%" data-goal-bar></div>
-          </div>
-          <div class="mt-2 text-xs text-gray-500 flex justify-between">
-            <span>Current: <span data-goal-current>$0</span></span>
-            <span>Target: $1,000,000</span>
-          </div>
-          <div class="mt-3 text-xs text-gray-400">Last updated: <span data-goal-updated>—</span></div>
+        </section>
+
+        <!-- Quick actions -->
+        <div class="flex flex-wrap gap-2">
+          <a href="#events" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10">Upcoming events</a>
+          <a href="#photos" class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10">Family album</a>
+          <a href="/pages/account.html" class="rounded-lg bg-gradient-to-r from-gold/90 to-goldSoft/90 px-3 py-2 text-sm font-semibold text-onyx hover:to-gold">Account</a>
         </div>
+
       </div>
     </header>
 
-    <!-- At a glance (placeholders) -->
-    <section class="bg-white border border-line rounded-2xl p-6">
-      <div class="grid gap-6 md:grid-cols-3">
-        <div>
-          <div class="text-sm text-gray-500">Members</div>
-          <div class="text-2xl font-bold">—</div>
-          <p class="text-xs text-gray-500 mt-1">Family profiles coming soon.</p>
+    <!-- GLANCE STRIP -->
+    <section class="card-soft rounded-2xl p-5">
+      <div class="grid gap-4 sm:grid-cols-3">
+        <div class="rounded-lg border border-white/10 bg-white/5 p-4">
+          <div class="text-xs text-white/60">Members</div>
+          <div class="mt-1 text-2xl font-semibold">—</div>
+          <div class="mt-1 text-[11px] text-white/50">Family profiles (coming soon)</div>
         </div>
-        <div>
-          <div class="text-sm text-gray-500">Milestones</div>
-          <div class="text-2xl font-bold">—</div>
-          <p class="text-xs text-gray-500 mt-1">We’ll track big wins here.</p>
+        <div class="rounded-lg border border-white/10 bg-white/5 p-4">
+          <div class="text-xs text-white/60">Milestones</div>
+          <div class="mt-1 text-2xl font-semibold">—</div>
+          <div class="mt-1 text-[11px] text-white/50">Track big wins</div>
         </div>
-        <div>
-          <div class="text-sm text-gray-500">Next Event</div>
-          <div class="text-2xl font-bold">TBD</div>
-          <p class="text-xs text-gray-500 mt-1">Calendar & RSVP coming soon.</p>
+        <div class="rounded-lg border border-white/10 bg-white/5 p-4">
+          <div class="text-xs text-white/60">Next Event</div>
+          <div class="mt-1 text-2xl font-semibold">TBD</div>
+          <div class="mt-1 text-[11px] text-white/50">Calendar & RSVP coming</div>
         </div>
       </div>
     </section>
 
-    <!-- Two-column sections -->
-    <div class="grid gap-6 md:grid-cols-2">
-      <!-- Upcoming Events -->
-      <section id="events" class="bg-white border border-line rounded-2xl p-6">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">Upcoming Events</h2>
-          <span class="text-xs text-gray-600">placeholders</span>
-        </div>
-        <div class="mt-3 space-y-2">
-          <div class="rounded-lg border border-line p-3">
-            <div class="text-sm font-medium">Family BBQ — TBD</div>
-            <div class="text-xs text-gray-600">Date coming soon • Location TBD</div>
-          </div>
-          <div class="rounded-lg border border-line p-3">
-            <div class="text-sm font-medium">Annual Meeting — TBD</div>
-            <div class="text-xs text-gray-600">Planning in progress</div>
-          </div>
-        </div>
-        <div class="mt-3 text-right">
-          <button class="rounded-md border border-line bg-white px-3 py-1.5 text-sm text-navy/80" disabled>+ Add event (soon)</button>
-        </div>
-      </section>
+    <!-- MAIN GRID -->
+    <div class="grid gap-6 lg:grid-cols-3">
+      <!-- Events -->
+<section id="events" class="card rounded-2xl p-6 lg:col-span-3">
+  <div class="flex items-center justify-between">
+    <h2 class="text-lg font-semibold text-gold">Upcoming Events</h2>
+    <span class="text-xs text-white/60">placeholder</span>
+  </div>
 
-      <!-- Latest Photos -->
-      <section id="photos" class="bg-white border border-line rounded-2xl p-6">
+  <!-- BEFORE: sm:grid-cols-2 -->
+  <!-- AFTER:  sm:grid-cols-3 -->
+  <div class="mt-3 grid gap-3 sm:grid-cols-3">
+    <div class="rounded-lg border border-white/10 bg-white/5 p-4">
+      <div class="text-sm font-medium">Family BBQ — TBD</div>
+      <div class="text-xs text-white/60">Date coming soon • Location TBD</div>
+    </div>
+
+    <div class="rounded-lg border border-white/10 bg-white/5 p-4">
+      <div class="text-sm font-medium">Annual Meeting — TBD</div>
+      <div class="text-xs text-white/60">Planning in progress</div>
+    </div>
+
+    <!-- New third card -->
+    <div class="rounded-lg border border-white/10 bg-white/5 p-4">
+      <div class="text-sm font-medium">Finance Check-in — TBD</div>
+      <div class="text-xs text-white/60">Quarterly review • Details soon</div>
+    </div>
+  </div>
+
+  <div class="mt-3 text-right">
+    <button disabled class="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/80">
+      + Add event (soon)
+    </button>
+  </div>
+</section>
+
+
+      <!-- Photos -->
+      <section id="photos" class="card rounded-2xl p-6 lg:col-span-2">
         <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">Latest Photos</h2>
-          <span class="text-xs text-gray-600">placeholders</span>
+          <h2 class="text-lg font-semibold text-gold">Latest Photos</h2>
+          <span class="text-xs text-white/60">placeholder</span>
         </div>
         <div class="mt-3 grid grid-cols-3 gap-2">
-          <div class="aspect-square rounded-lg bg-gray-100 grid place-items-center text-gray-400">📷</div>
-          <div class="aspect-square rounded-lg bg-gray-100 grid place-items-center text-gray-400">📷</div>
-          <div class="aspect-square rounded-lg bg-gray-100 grid place-items-center text-gray-400">📷</div>
+          <div class="aspect-square rounded-lg border border-white/10 bg-white/5 grid place-items-center text-white/40">📷</div>
+          <div class="aspect-square rounded-lg border border-white/10 bg-white/5 grid place-items-center text-white/40">📷</div>
+          <div class="aspect-square rounded-lg border border-white/10 bg-white/5 grid place-items-center text-white/40">📷</div>
         </div>
         <div class="mt-3 text-right">
-          <button class="rounded-md border border-line bg-white px-3 py-1.5 text-sm text-navy/80" disabled>Upload (soon)</button>
+          <button disabled class="rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-white/80">Upload (soon)</button>
         </div>
       </section>
 
       <!-- Announcements -->
-      <section id="updates" class="bg-white border border-line rounded-2xl p-6 md:col-span-2">
+      <section id="updates" class="card rounded-2xl p-6 lg:col-span-1">
         <div class="flex items-center justify-between">
-          <h2 class="text-lg font-semibold">Announcements</h2>
-          <span class="text-xs text-gray-600">placeholders</span>
+          <h2 class="text-lg font-semibold text-gold">Announcements</h2>
+          <span class="text-xs text-white/60">placeholder</span>
         </div>
         <div class="mt-3 space-y-2">
-          <div class="rounded-lg border border-line p-3">
+          <div class="rounded-lg border border-white/10 bg-white/5 p-3">
             <div class="text-sm font-medium">Welcome to the new portal 🎉</div>
-            <div class="text-xs text-gray-600">We’re building photos, events, and goal tracking next.</div>
+            <div class="text-xs text-white/60">Photos, events, and goal tracking are next.</div>
           </div>
-          <div class="rounded-lg border border-line p-3">
+          <div class="rounded-lg border border-white/10 bg-white/5 p-3">
             <div class="text-sm font-medium">Billing portal</div>
-            <div class="text-xs text-gray-600">Manage your pledge and invoices from your menu.</div>
+            <div class="text-xs text-white/60">Manage your pledge & invoices from your menu.</div>
           </div>
         </div>
       </section>
-    </div>
 
-    <!-- Quick links / What’s next -->
-    <div class="grid gap-6 md:grid-cols-2">
-      <section class="bg-white border border-line rounded-2xl p-6">
-        <h2 class="text-lg font-semibold">Quick Links</h2>
-        <div class="mt-3 grid sm:grid-cols-2 gap-2 text-sm">
-          <a class="rounded-md border border-line bg-white px-3 py-2 hover:bg-gray-50" href="#photos">📚 Family Album</a>
-          <a class="rounded-md border border-line bg-white px-3 py-2 hover:bg-gray-50" href="#events">📅 Events</a>
-          <a class="rounded-md border border-line bg-white px-3 py-2 hover:bg-gray-50" href="#goals">📈 LLC Goals</a>
-          <a class="rounded-md border border-line bg-white px-3 py-2 hover:bg-gray-50" href="/pages/account.html">⚙️ Account</a>
+      <!-- Quick Links -->
+      <section class="card rounded-2xl p-6 lg:col-span-2">
+        <h2 class="text-lg font-semibold text-gold">Quick Links</h2>
+        <div class="mt-3 grid gap-2 text-sm">
+          <a class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 hover:bg-white/10" href="#photos">📚 Family Album</a>
+          <a class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 hover:bg-white/10" href="#events">📅 Events</a>
+          <a class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 hover:bg-white/10" href="/pages/account.html">⚙️ Account</a>
         </div>
       </section>
 
-      <section id="goals" class="bg-white border border-line rounded-2xl p-6">
-        <h2 class="text-lg font-semibold">What’s next</h2>
-        <ul class="mt-3 list-disc pl-5 text-sm text-gray-700 space-y-1">
-          <li>Real net worth tracker (assets & liabilities)</li>
-          <li>Shared family calendar + RSVP</li>
-          <li>Photo uploads & albums with permissions</li>
-          <li>Milestones timeline (birthdays, graduations, wins)</li>
+      <!-- What’s Next -->
+      <section class="card rounded-2xl p-6 lg:col-span-1">
+        <h2 class="text-lg font-semibold text-gold">What’s Next</h2>
+        <ul class="mt-3 space-y-2 text-sm">
+          <li class="rounded-lg border border-white/10 bg-white/5 px-3 py-2">Enable 2FA for your account</li>
+          <li class="rounded-lg border border-white/10 bg-white/5 px-3 py-2">Add upcoming family dates</li>
+          <li class="rounded-lg border border-white/10 bg-white/5 px-3 py-2">Upload 3–5 favorite photos</li>
+          <li class="rounded-lg border border-white/10 bg-white/5 px-3 py-2">Discuss this year’s contribution</li>
         </ul>
       </section>
     </div>
   </main>
 
-  <footer class="border-t border-line">
-    <div class="max-w-5xl mx-auto px-6 py-6 text-sm text-gray-600 flex items-center justify-between">
-      <div>© <span id="year"></span> Justice McNeal LLC</div>
-      <div>Built with love for the fam ❤️</div>
+  <footer class="pt-2 pb-8">
+    <div class="mx-auto max-w-6xl px-4 text-center text-[11px] text-white/60">
+      © <span id="year"></span> Justice McNeal LLC • Legacy • Unity • Prosperity
     </div>
   </footer>
 
-  <!-- Modules -->
+  <!-- Navbar + shared bootstrap -->
   <script type="module" src="/js/navbar/index.js"></script>
   <script type="module" src="/js/shared/bootstrap.js"></script>
 
-  <!-- Home hydration (no redirects here) -->
-  <script type="module">
-    import { supabase } from '/js/shared/supabaseClient.js';
-    const $ = (q) => document.querySelector(q);
-    $('#year').textContent = new Date().getFullYear();
+  <!-- Light hydration: welcome name + goal progress + year -->
+  <script>
+    // 1) Welcome name: try navbar’s hydrated values (#nav-name or #nav-hello)
+    (function welcomeNameHydrate(){
+      const set = (n)=>{ const el=document.getElementById('welcomeName'); if(el&&n) el.textContent=n; };
+      const pickFirst = (full='') => (full.trim().split(/\s+/)[0] || 'Member');
+      const tryNow = () => {
+        const a = document.getElementById('nav-name')?.textContent?.trim();
+        const b = document.getElementById('nav-hello')?.textContent?.trim();
+        if (a || b) { set(pickFirst(a || b)); return true; }
+        return false;
+      };
+      if (!tryNow()) {
+        // navbar hydrates async — retry a few times quickly, then stop
+        let tries = 20; const t = setInterval(()=>{ if(tryNow() || --tries<=0) clearInterval(t); }, 150);
+      }
+    })();
 
-    const { data:{ session } } = await supabase.auth.getSession();
-    if (session) {
-      const email = session.user?.email || '';
-      let first = email.split('@')[0];
-      try {
-        const { data } = await supabase
-          .from('members').select('full_name,is_admin')
-          .eq('auth_user_id', session.user.id).maybeSingle();
-        if (data?.full_name) first = data.full_name.split(' ')[0];
-      } catch {}
-      $('[data-first-name]').textContent = first || 'there';
-
-      // Goal placeholder
-      const current = 0, target = 1_000_000;
+    // 2) Primary goal (placeholder math for now — wire to your real data later)
+    (function goalHydrate(){
+      const target = 1_000_000; // $1M
+      const current = 0;        // TODO: replace with live value
       const pct = Math.max(0, Math.min(100, Math.floor((current/target)*100)));
-      $('[data-goal-current]').textContent = current.toLocaleString('en-US',{ style:'currency', currency:'USD' });
-      $('[data-goal-pct]').textContent = pct + '%';
-      $('[data-goal-bar]').style.width = pct + '%';
-      $('[data-goal-updated]').textContent = '—';
-    }
+      document.getElementById('goalTarget').textContent = target.toLocaleString('en-US',{style:'currency',currency:'USD'});
+      document.getElementById('goalCurrent').textContent = current.toLocaleString('en-US',{style:'currency',currency:'USD'});
+      document.getElementById('goalPct').textContent = pct + '%';
+      document.getElementById('goalBar').style.width = pct + '%';
+      document.getElementById('goalUpdated').textContent = '—';
+    })();
+
+    // 3) Footer year
+    document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
 </html>
